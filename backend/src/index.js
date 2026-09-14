@@ -19,11 +19,11 @@ app.use(
 app.use(express.json());
 
 // Root test route
-// app.get("/", (req, res) => {
-//   res.json({
-//     message: "CampusHive Backend API is running",
-//   });
-// });
+app.get("/", (req, res) => {
+  res.json({
+    message: "CampusHive Backend API is running",
+  });
+});
 
 checkDatabaseConnection()
   .then(() => {
