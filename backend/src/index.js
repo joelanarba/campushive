@@ -27,26 +27,26 @@ app.get("/", (req, res) => {
 
 checkDatabaseConnection()
   .then(() => {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`App is running on port ${PORT}`);
+    });
+
+    server.on("error", (err) => {
+      if (err.code === "EACCES") {
+        console.error(
+          `Port ${PORT} is reserved by Windows. Please set PORT=5001 in your backend/.env file.`,
+        );
+      } else {
+        console.error("Server error:", err);
+      }
     });
   })
   .catch((err) => {
     console.error(
       "Failed to start the server due to database connection error:",
-      err,
+      err.message,
     );
-    process.exit(1); // Exit the process with an error code
+    process.exit(1);
   });
-
-// server.on("error", (err) => {
-//   if (err.code === "EACCES") {
-//     console.error(
-//       `Port ${PORT} requires elevated privileges or is reserved by your OS (e.g. Windows port exclusions). Please set PORT=5001 in your backend/.env file.`,
-//     );
-//   } else {
-//     console.error("Server error:", err);
-//   }
-// });
 
 module.exports = app;
