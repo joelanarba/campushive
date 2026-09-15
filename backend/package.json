@@ -7,7 +7,12 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "prisma:validate": "prisma validate",
+    "prisma:generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:status": "prisma migrate status"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
@@ -21,7 +26,7 @@
     "joi": "^18.2.9",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
-    "prisma": "^8.0.0-rc.15"
+    "prisma": "7.10.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
