@@ -1,9 +1,15 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("node:path");
 const { checkDatabaseConnection } = require("./config/db");
+const authRoutes = require("./routes/authRoutes");
+const { errorHandler } = require("./middlewares/errorHandler");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+if (!process.env.JWT_ACCESS_SECRET?.trim()) {
+  throw new Error("JWT_ACCESS_SECRET is required");
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,12 +24,8 @@ app.use(
 );
 app.use(express.json());
 
-// Root test route
-app.get("/", (req, res) => {
-  res.json({
-    message: "CampusHive Backend API is running",
-  });
-});
+app.use("/api/auth", authRoutes);
+app.use(errorHandler);
 
 checkDatabaseConnection()
   .then(() => {
@@ -34,19 +36,9 @@ checkDatabaseConnection()
   .catch((err) => {
     console.error(
       "Failed to start the server due to database connection error:",
-      err,
+      err.message,
     );
-    process.exit(1); // Exit the process with an error code
+    process.exit(1);
   });
-
-// server.on("error", (err) => {
-//   if (err.code === "EACCES") {
-//     console.error(
-//       `Port ${PORT} requires elevated privileges or is reserved by your OS (e.g. Windows port exclusions). Please set PORT=5001 in your backend/.env file.`,
-//     );
-//   } else {
-//     console.error("Server error:", err);
-//   }
-// });
 
 module.exports = app;

@@ -11,8 +11,7 @@ const checkDatabaseConnection = async () => {
     await client.connect();
     console.log("PostgreSQL database connected successfully");
   } catch (err) {
-    // console.error("Error connecting to PostgreSQL database:", err);
-    throw err; // Rethrow the error to be handled in index.js
+    throw err;
   } finally {
     await client.end();
   }
