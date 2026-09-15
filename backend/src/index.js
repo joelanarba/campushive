@@ -34,4 +34,8 @@ server.on('error', (err) => {
   }
 });
 
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+app.use('/api/v1/auth', require('./routes/authRoutes'));
+
 module.exports = app;
