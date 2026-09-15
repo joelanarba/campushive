@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-// import Logo from "./Logo";
 import Button from "./Button";
-import ThemeToggle from "../context/ThemeToggle";
+import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
+
 
 export default function Navbar() {
   return (
