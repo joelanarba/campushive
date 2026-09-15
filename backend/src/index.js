@@ -1,9 +1,23 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("node:path");
 const { checkDatabaseConnection } = require("./config/db");
+const authRoutes = require("./routes/authRoutes");
+const { errorHandler } = require("./middlewares/errorHandler");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+if (!process.env.JWT_ACCESS_SECRET?.trim()) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_ACCESS_SECRET is required in production");
+  }
+  console.warn(
+    "⚠️  WARNING: JWT_ACCESS_SECRET is not set in .env. Using temporary development fallback.",
+  );
+  process.env.JWT_ACCESS_SECRET =
+    "development_jwt_access_secret_32_bytes_long_key";
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +38,12 @@ app.get("/", (req, res) => {
     message: "CampusHive Backend API is running",
   });
 });
+
+// API Routes
+app.use("/api/auth", authRoutes);
+
+// Centralized error handling
+app.use(errorHandler);
 
 checkDatabaseConnection()
   .then(() => {
