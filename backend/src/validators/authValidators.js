@@ -15,7 +15,9 @@ const password = Joi.string()
   })
   .required();
 const registrationSchema = Joi.object({
-  account_type: Joi.string().valid("student", "entrepreneur").required(),
+  account_type: Joi.string()
+    .valid("student", "entrepreneur", "admin")
+    .required(),
   full_name: Joi.string().trim().min(1).max(150).required(),
   email: Joi.string()
     .trim()
@@ -51,12 +53,20 @@ const registrationSchema = Joi.object({
         return digits >= 7 && digits <= 15
           ? value
           : helpers.error("any.invalid");
-      }).required(),
+      })
+      .required(),
     otherwise: Joi.forbidden(),
   }),
 })
   .required()
   .unknown(false);
 
+const loginSchema = Joi.object({
+  email: Joi.string().trim().lowercase().max(254)
+    .email({ tlds: { allow: false } }).required(),
+  password: Joi.string().max(72).custom((value, helpers) =>
+    Buffer.byteLength(value, "utf8") <= 72 ? value : helpers.error("any.invalid")
+  ).required(),
+}).required().unknown(false);
 
-module.exports = { registrationSchema };
+module.exports = { registrationSchema, loginSchema };

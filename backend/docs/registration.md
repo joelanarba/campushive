@@ -18,8 +18,10 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
 Keep the generated value in `.env`, outside version control. Startup fails when
-the secret is missing. Tokens expire after 900 seconds; this feature does not
-provide login, refresh tokens, email verification, or admin approval endpoints.
+the secret is missing. Access tokens default to 900 seconds, configurable with
+`JWT_ACCESS_TTL_SECONDS`. See [login and refresh documentation](authentication.md)
+for cookie sessions and protected access. Email verification and admin approval
+endpoints are not yet provided.
 
 ## POST /api/auth/register
 
@@ -89,7 +91,8 @@ Entrepreneurs receive `role: ["student", "entrepreneur"]` and a profile object
 containing `id`, `user_id`, the four submitted business fields,
 `verification_status: "pending"`, `rejection_reason: null`, and `created_at`.
 
-JWTs use HS256 and contain `sub` (user UUID), `role`, `iat`, and `exp`.
+JWTs use HS256 and contain `sub` (user UUID), `role`, `iat`, `exp`, configured
+`iss` and `aud`, and `token_type: "access"`.
 A token authenticates an account; it does not grant admin approval. Future
 provider-only operations must check the current database verification status.
 
