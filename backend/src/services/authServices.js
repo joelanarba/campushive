@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { prisma } = require("../config/prismaConfig");
+const { prisma } = require("../config/db");
 const userSelect = {
   id: true,
   full_name: true,
