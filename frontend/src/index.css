@@ -1,17 +1,166 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #213547;
-  background-color: #f8fafc;
+@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+/* Tailwind v4 has no tailwind.config.js — utilities like bg-paper, text-ink,
+   font-display etc. are generated from this @theme block instead. */
+@theme {
+  --font-display: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-data: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #1c1a17;
+  --color-ink-soft: #6b6255;
+  --color-ink-raised: #2a2620; /* dark-mode card surface, no light-mode equivalent needed */
+
+  --color-paper: #fbf8f2;
+  --color-paper-raised: #f3ecdd;
+
+  --color-line: #e4ddd0;
+  --color-line-dark: #3a3327; /* dark-mode border tone */
+
+  --color-honey: #e8a33d;
+  --color-honey-deep: #c97a1e;
+  --color-honey-tint: #fbe8c9;
+
+  --color-moss: #3f6b4f;
+  --color-moss-deep: #2e5039;
+  --color-moss-tint: #e1ebe3;
+
+  --color-clay: #b4472c;
+  --color-clay-deep: #8f3620;
+  --color-clay-tint: #f5e1da;
+
+  --max-width-wrap: 72rem;
+}
+
+/* Enables the `dark:` variant whenever an ancestor (normally <html>) has
+   class="dark" — toggled by ThemeContext, not by prefers-color-scheme
+   directly, so the user's explicit choice always wins. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  @apply bg-paper text-ink dark:bg-ink dark:text-paper;
+  font-family: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 
-* {
-  box-sizing: border-box;
+:focus-visible {
+  outline: 2px solid #c97a1e;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@layer utilities {
+  .skip-link {
+    @apply absolute left-0 top-0 z-50 -translate-y-full rounded-md bg-ink px-4 py-2 text-paper transition-transform dark:bg-paper dark:text-ink;
+  }
+  .skip-link:focus {
+    @apply translate-y-0;
+    left: 1rem;
+    top: 1rem;
+  }
+
+  .hero-pattern {
+    background-color: #fbf8f2;
+    background-image:
+      linear-gradient(
+        30deg,
+        #fbe8c9 12%,
+        transparent 12.5%,
+        transparent 87%,
+        #fbe8c9 87.5%,
+        #fbe8c9
+      ),
+      linear-gradient(
+        150deg,
+        #fbe8c9 12%,
+        transparent 12.5%,
+        transparent 87%,
+        #fbe8c9 87.5%,
+        #fbe8c9
+      ),
+      linear-gradient(
+        30deg,
+        #fbe8c9 12%,
+        transparent 12.5%,
+        transparent 87%,
+        #fbe8c9 87.5%,
+        #fbe8c9
+      ),
+      linear-gradient(
+        150deg,
+        #fbe8c9 12%,
+        transparent 12.5%,
+        transparent 87%,
+        #fbe8c9 87.5%,
+        #fbe8c9
+      );
+    background-size: 46px 80px;
+    background-position:
+      0 0,
+      0 0,
+      23px 40px,
+      23px 40px;
+  }
+  .dark .hero-pattern {
+    background-color: #17140f;
+    background-image:
+      linear-gradient(
+        30deg,
+        #2a2620 12%,
+        transparent 12.5%,
+        transparent 87%,
+        #2a2620 87.5%,
+        #2a2620
+      ),
+      linear-gradient(
+        150deg,
+        #2a2620 12%,
+        transparent 12.5%,
+        transparent 87%,
+        #2a2620 87.5%,
+        #2a2620
+      ),
+      linear-gradient(
+        30deg,
+        #2a2620 12%,
+        transparent 12.5%,
+        transparent 87%,
+        #2a2620 87.5%,
+        #2a2620
+      ),
+      linear-gradient(
+        150deg,
+        #2a2620 12%,
+        transparent 12.5%,
+        transparent 87%,
+        #2a2620 87.5%,
+        #2a2620
+      );
+    background-size: 46px 80px;
+    background-position:
+      0 0,
+      0 0,
+      23px 40px,
+      23px 40px;
+  }
+
+  .faq-item summary {
+    list-style: none;
+  }
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq-item summary::after {
+    content: "+";
+    @apply text-xl font-normal text-honey-deep;
+  }
+  .faq-item[open] summary::after {
+    content: "\2013";
+  }
 }
