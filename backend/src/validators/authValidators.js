@@ -1,23 +1,6 @@
 const Joi = require("joi");
-// const password = Joi.string()
-//   .min(8)
-//   .custom((value, helpers) => {
-//     if (
-//       Buffer.byteLength(value, "utf8") > 72 ||
-//       !/[A-Z]/.test(value) ||
-//       !/[a-z]/.test(value) ||
-//       !/[0-9]/.test(value) ||
-//       !/[^A-Za-z0-9\s]/.test(value)
-//     ) {
-//       return helpers.error("any.invalid");
-//     }
-//     return value;
-//   })
-//   .required();
 const registrationSchema = Joi.object({
-  account_type: Joi.string()
-    .valid("student", "entrepreneur", "admin")
-    .required(),
+  account_type: Joi.string().valid("student", "entrepreneur").required(),
   full_name: Joi.string().trim().min(1).max(150).required(),
   email: Joi.string()
     .trim()

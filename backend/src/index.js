@@ -10,6 +10,7 @@ if (!process.env.JWT_ACCESS_SECRET?.trim()) {
 
 const { checkDatabaseConnection } = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const { errorHandler } = require("./middlewares/errorHandler");
 const { clientOrigins } = require("./config/authConfig");
 
@@ -26,6 +27,7 @@ app.use(
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use(errorHandler);
 
 checkDatabaseConnection()
