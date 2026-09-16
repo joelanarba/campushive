@@ -10,6 +10,8 @@ if (!process.env.JWT_ACCESS_SECRET?.trim()) {
 
 const { checkDatabaseConnection } = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const serviceRoutes = require("./routes/serviceRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const entrepreneurRoutes = require("./routes/entrepreneurRoutes");
 const { errorHandler } = require("./middlewares/errorHandler");
@@ -30,6 +32,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/entrepreneurs", entrepreneurRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use(errorHandler);
 
 checkDatabaseConnection()

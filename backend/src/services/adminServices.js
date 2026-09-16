@@ -1,4 +1,17 @@
-const { prisma } = require("../config/prismaConfig");
+const {
+  prisma,
+} = require("../config/prismaConfig");
+const {
+  listAdminServices,
+  getAdminService,
+} = require("./serviceServices");
+const {
+  listCategories,
+  getCategory,
+  createCategory,
+  patchCategory,
+  deleteCategory,
+} = require("./categoryServices");
 
 const listUsers = async ({ page, limit, role }) => {
   const where = role ? { role: { has: role } } : {};
@@ -28,4 +41,5 @@ const listUsers = async ({ page, limit, role }) => {
   };
 };
 
-module.exports = { listUsers };
+module.exports = { listUsers, listAdminServices, getAdminService, listCategories, getCategory,
+  createCategory, patchCategory, deleteCategory };
