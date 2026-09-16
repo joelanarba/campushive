@@ -34,6 +34,12 @@ const duplicateEmail = () => {
 };
 
 const registerUser = async (input) => {
+  const registrationRoles = new Map([
+    ["student", ["student"]],
+    ["entrepreneur", ["student", "entrepreneur"]],
+  ]);
+  const roles = registrationRoles.get(input.account_type);
+  if (!roles) throw new Error("Unsupported public account type");
   if (
     await prisma.user.findUnique({
       where: { email: input.email },
@@ -52,9 +58,7 @@ const registerUser = async (input) => {
           full_name: input.full_name,
           email: input.email,
           password_hash,
-          role: isEntrepreneur
-            ? ["student", "entrepreneur", "admin"]
-            : ["student"],
+          role: roles,
           is_email_verified: false,
           ...(isEntrepreneur
             ? {

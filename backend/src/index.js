@@ -18,6 +18,7 @@ if (!process.env.JWT_ACCESS_SECRET?.trim()) {
 
 const { checkDatabaseConnection } = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const { errorHandler } = require("./middlewares/errorHandler");
 const { clientOrigins } = require("./config/authConfig");
 
@@ -42,6 +43,7 @@ app.get("/", (req, res) => {
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Centralized error handling
 app.use(errorHandler);

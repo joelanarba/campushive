@@ -65,4 +65,33 @@ const limitLogin = rateLimit({
   message: { message: "Too many login attempts. Please try again later." },
 });
 
-module.exports = { authenticate, protectAuthCookies, limitLogin };
+// Must follow authenticate: req.user contains current database roles.
+const authorizeRoles =
+  (...allowedRoles) =>
+  (req, res, next) => {
+    if (!req.user?.id) {
+      return res
+        .status(401)
+        .json({ message: "Invalid or missing access token" });
+    }
+    const knownRoles = ["student", "entrepreneur", "admin"];
+    const roles = req.user.role;
+    if (
+      !Array.isArray(roles) ||
+      roles.length === 0 ||
+      !roles.every((role) => knownRoles.includes(role)) ||
+      allowedRoles.length === 0 ||
+      !allowedRoles.every((role) => knownRoles.includes(role)) ||
+      !roles.some((role) => allowedRoles.includes(role))
+    ) {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    return next();
+  };
+
+module.exports = {
+  authenticate,
+  authorizeRoles,
+  protectAuthCookies,
+  limitLogin,
+};

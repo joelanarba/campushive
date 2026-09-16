@@ -12,7 +12,10 @@
     "prisma:generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
-    "migrate:status": "prisma migrate status"
+    "migrate:status": "prisma migrate status",
+    "admin:grant": "node scripts/adminRoles.js grant",
+    "admin:audit": "node scripts/adminRoles.js audit",
+    "admin:revoke": "node scripts/adminRoles.js revoke"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
