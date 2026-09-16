@@ -19,7 +19,7 @@ const registrationSchema = Joi.object({
       "string.min": "Password must be at least 8 characters long",
       "string.max": "Password cannot exceed 128 characters",
       "string.pattern.base":
-        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special   character",
       "any.required": "Password is required",
     }),
   confirm_password: Joi.string().valid(Joi.ref("password")).required(),
