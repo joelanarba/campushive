@@ -1,8 +1,8 @@
 const {
-  authenticate,
-  authorizeRoles,
-} = require("../middlewares/authMiddleware");
-const {
+  createOwnAvailability,
+  listOwnAvailability,
+  updateOwnAvailability,
+  deleteOwnAvailability,
   updateProfile,
   createOwnService,
   listOwnServices,
@@ -10,6 +10,10 @@ const {
   updateOwnService,
   deleteOwnService,
 } = require("../controllers/entrepreneurController");
+const {
+  authenticate,
+  authorizeRoles,
+} = require("../middlewares/authMiddleware");
 
 const express = require("express");
 
@@ -26,5 +30,10 @@ router.get("/me/services", authenticate, authorizeRoles("entrepreneur"), listOwn
 router.get("/me/services/:serviceId", authenticate, authorizeRoles("entrepreneur"), getOwnService);
 router.patch("/me/services/:serviceId", authenticate, authorizeRoles("entrepreneur"), updateOwnService);
 router.delete("/me/services/:serviceId", authenticate, authorizeRoles("entrepreneur"), deleteOwnService);
+
+router.post("/me/services/:serviceId/availability", authenticate, authorizeRoles("entrepreneur"), createOwnAvailability);
+router.get("/me/services/:serviceId/availability", authenticate, authorizeRoles("entrepreneur"), listOwnAvailability);
+router.patch("/me/services/:serviceId/availability/:slotId", authenticate, authorizeRoles("entrepreneur"), updateOwnAvailability);
+router.delete("/me/services/:serviceId/availability/:slotId", authenticate, authorizeRoles("entrepreneur"), deleteOwnAvailability);
 
 module.exports = router;

@@ -1,4 +1,7 @@
 const {
+  availabilityIdSchema,
+  createAvailabilitySchema,
+  patchAvailabilitySchema,
   updateProfileSchema,
   serviceIdSchema,
   ownerServiceQuerySchema,
@@ -6,6 +9,13 @@ const {
   patchServiceSchema,
 } = require("../validators/entrepreneurValidators");
 const {
+  paginationSchema,
+} = require("../validators/availabilityValidators");
+const {
+  createAvailability,
+  listAvailability,
+  patchAvailability,
+  archiveAvailability,
   updateOwnProfile,
   createService,
   getServices,
@@ -13,7 +23,10 @@ const {
   patchService,
   archiveService,
 } = require("../services/entrepreneurServices");
-const { validationFailure, serviceFailure } = require("./serviceResponses");
+const {
+  validationFailure,
+  serviceFailure,
+} = require("./serviceResponses");
 
 const updateProfile = async (req, res, next) => {
   res.set("Cache-Control", "no-store");
@@ -144,6 +157,60 @@ const deleteOwnService = async (req, res, next) => {
   }
 };
 
+const createOwnAvailability = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const params = serviceIdSchema.validate(req.params, { abortEarly: false });
+    if (params.error) return validationFailure(res, params.error);
+    const body = createAvailabilitySchema.validate(req.body, { abortEarly: false });
+    if (body.error) return validationFailure(res, body.error);
+    const result = await createAvailability(req.user.id, params.value.serviceId, body.value);
+    return res.status(201).json({ message: "Weekly availability created successfully", data: { slot: result } });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+const listOwnAvailability = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const params = serviceIdSchema.validate(req.params, { abortEarly: false });
+    if (params.error) return validationFailure(res, params.error);
+    const query = paginationSchema.validate(req.query, { abortEarly: false });
+    if (query.error) return validationFailure(res, query.error);
+    const result = await listAvailability(req.user.id, params.value.serviceId, query.value);
+    return res.status(200).json({ message: "Weekly availability retrieved successfully", data: result });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+const updateOwnAvailability = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const params = availabilityIdSchema.validate(req.params, { abortEarly: false });
+    if (params.error) return validationFailure(res, params.error);
+    const body = patchAvailabilitySchema.validate(req.body, { abortEarly: false });
+    if (body.error) return validationFailure(res, body.error);
+    const result = await patchAvailability(req.user.id, params.value.serviceId, params.value.slotId, body.value);
+    return res.status(200).json({ message: "Weekly availability updated successfully", data: { slot: result } });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+const deleteOwnAvailability = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const params = availabilityIdSchema.validate(req.params, { abortEarly: false });
+    if (params.error) return validationFailure(res, params.error);
+    const result = await archiveAvailability(req.user.id, params.value.serviceId, params.value.slotId);
+    return res.status(200).json({ message: "Weekly availability archived successfully", data: { slot: result } });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
 module.exports = {
   updateProfile,
   createOwnService,
@@ -151,4 +218,8 @@ module.exports = {
   getOwnService,
   updateOwnService,
   deleteOwnService,
+  createOwnAvailability,
+  listOwnAvailability,
+  updateOwnAvailability,
+  deleteOwnAvailability,
 };

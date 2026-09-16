@@ -128,7 +128,10 @@ model ServiceCategory {
 model AvailabilitySlot {
   id         String   @id @default(uuid()) @db.Uuid
   service_id String   @db.Uuid
-  slot_date  DateTime @db.Date
+  slot_date  DateTime? @db.Date
+  weekday    Int?
+  is_active  Boolean  @default(true)
+  version    Int      @default(1)
   start_time DateTime @db.Time(0)
   end_time   DateTime @db.Time(0)
   is_booked  Boolean  @default(false)
@@ -137,6 +140,7 @@ model AvailabilitySlot {
   bookings Booking[]
 
   @@index([service_id, slot_date])
+  @@index([service_id, weekday, is_active])
   @@map("availability_slots")
 }
 
@@ -149,6 +153,8 @@ model Booking {
   status                BookingStatus @default(pending)
   created_at            DateTime      @default(now()) @db.Timestamptz(3)
   service_name_snapshot String        @db.VarChar(255)
+  starts_at             DateTime      @db.Timestamptz(3)
+  ends_at               DateTime      @db.Timestamptz(3)
 
   service Service          @relation(fields: [service_id], references: [id], onDelete: Restrict)
   slot    AvailabilitySlot @relation(fields: [slot_id], references: [id], onDelete: Restrict)
@@ -156,6 +162,8 @@ model Booking {
 
   @@index([service_id])
   @@index([slot_id])
+  @@index([service_id, status, starts_at, ends_at])
+  @@index([slot_id, status, ends_at])
   @@index([user_id])
   @@map("bookings")
 }
