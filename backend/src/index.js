@@ -31,7 +31,7 @@ app.use(errorHandler);
 checkDatabaseConnection()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`App is running on port ${PORT}`);
+      console.log(`App is running on localhost: ${PORT}`);
     });
   })
   .catch((err) => {

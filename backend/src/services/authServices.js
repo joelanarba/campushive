@@ -1,6 +1,10 @@
 const bcrypt = require("bcrypt");
 const { randomUUID, randomBytes } = require("node:crypto");
-const { issueAccessToken, createRefreshToken, hashRefreshToken } = require("./tokenServices");
+const {
+  issueAccessToken,
+  createRefreshToken,
+  hashRefreshToken,
+} = require("./tokenServices");
 const { prisma } = require("../config/prismaConfig");
 const userSelect = {
   id: true,
@@ -84,8 +88,12 @@ const registerUser = async (input) => {
 // Use the same bcrypt cost for unknown emails to avoid an obvious timing shortcut.
 const dummyPasswordHash = bcrypt.hash(randomBytes(32).toString("hex"), 12);
 const safeUserSelect = {
-  id: true, full_name: true, email: true, role: true,
-  is_email_verified: true, created_at: true,
+  id: true,
+  full_name: true,
+  email: true,
+  role: true,
+  is_email_verified: true,
+  created_at: true,
 };
 
 const authenticationError = (code) => {
@@ -97,24 +105,34 @@ const authenticationError = (code) => {
 
 // The current User model has no inactive/deleted state. Profile approval is
 // a provider authorization concern, not an account authentication restriction.
-const findAuthenticatedUser = (id) => prisma.user.findUnique({
-  where: { id }, select: { id: true, role: true },
-});
+const findAuthenticatedUser = (id) =>
+  prisma.user.findUnique({
+    where: { id },
+    select: { id: true, role: true },
+  });
 
 const loginUser = async ({ email, password }) => {
   const dummyHash = await dummyPasswordHash;
   const user = await prisma.user.findUnique({
-    where: { email }, select: { ...safeUserSelect, password_hash: true },
+    where: { email },
+    select: { ...safeUserSelect, password_hash: true },
   });
-  const matches = await bcrypt.compare(password, user?.password_hash || dummyHash);
+  const matches = await bcrypt.compare(
+    password,
+    user?.password_hash || dummyHash,
+  );
   if (!user || !matches) throw authenticationError("INVALID_CREDENTIALS");
   const { password_hash, ...safeUser } = user;
   const refresh = createRefreshToken();
   const data = { user: safeUser, ...issueAccessToken(safeUser) };
-  await prisma.refreshToken.create({ data: {
-    user_id: user.id, token_hash: refresh.token_hash,
-    expires_at: refresh.expires_at, family_id: randomUUID(),
-  } });
+  await prisma.refreshToken.create({
+    data: {
+      user_id: user.id,
+      token_hash: refresh.token_hash,
+      expires_at: refresh.expires_at,
+      family_id: randomUUID(),
+    },
+  });
   return { data, refreshToken: refresh.token };
 };
 
@@ -123,41 +141,65 @@ const refreshSession = async (token) => {
     throw authenticationError("INVALID_REFRESH_TOKEN");
   }
   const token_hash = hashRefreshToken(token);
-  const initial = await prisma.refreshToken.findUnique({ where: { token_hash } });
+  const initial = await prisma.refreshToken.findUnique({
+    where: { token_hash },
+  });
   if (!initial) throw authenticationError("INVALID_REFRESH_TOKEN");
 
-  const result = await prisma.$transaction(async (tx) => {
-    // Serialize all rotation/replay operations for the family, including requests
-    // involving different generations. Hash collisions only serialize extra work.
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${initial.family_id}))::text`;
-    const record = await tx.refreshToken.findUnique({
-      where: { token_hash }, include: { user: { select: safeUserSelect } },
-    });
-    if (!record) return null;
-    const now = new Date();
-    if (record.consumed_at) {
-      await tx.refreshToken.updateMany({
-        where: { family_id: record.family_id, revoked_at: null },
-        data: { revoked_at: now },
+  const result = await prisma.$transaction(
+    async (tx) => {
+      // Serialize all rotation/replay operations for the family, including requests
+      // involving different generations. Hash collisions only serialize extra work.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${initial.family_id}))::text`;
+      const record = await tx.refreshToken.findUnique({
+        where: { token_hash },
+        include: { user: { select: safeUserSelect } },
       });
-      // Return instead of throwing so replay revocation is committed.
-      return null;
-    }
-    if (record.revoked_at || record.expires_at <= now || !record.user) return null;
-    const consumed = await tx.refreshToken.updateMany({
-      where: { id: record.id, consumed_at: null, revoked_at: null, expires_at: { gt: now } },
-      data: { consumed_at: now },
-    });
-    if (consumed.count !== 1) return null;
-    const refresh = createRefreshToken();
-    await tx.refreshToken.create({ data: {
-      user_id: record.user_id, token_hash: refresh.token_hash,
-      family_id: record.family_id, expires_at: refresh.expires_at,
-    } });
-    return { data: { user: record.user, ...issueAccessToken(record.user) }, refreshToken: refresh.token };
-  }, { isolationLevel: "ReadCommitted" });
+      if (!record) return null;
+      const now = new Date();
+      if (record.consumed_at) {
+        await tx.refreshToken.updateMany({
+          where: { family_id: record.family_id, revoked_at: null },
+          data: { revoked_at: now },
+        });
+        // Return instead of throwing so replay revocation is committed.
+        return null;
+      }
+      if (record.revoked_at || record.expires_at <= now || !record.user)
+        return null;
+      const consumed = await tx.refreshToken.updateMany({
+        where: {
+          id: record.id,
+          consumed_at: null,
+          revoked_at: null,
+          expires_at: { gt: now },
+        },
+        data: { consumed_at: now },
+      });
+      if (consumed.count !== 1) return null;
+      const refresh = createRefreshToken();
+      await tx.refreshToken.create({
+        data: {
+          user_id: record.user_id,
+          token_hash: refresh.token_hash,
+          family_id: record.family_id,
+          expires_at: refresh.expires_at,
+        },
+      });
+      return {
+        data: { user: record.user, ...issueAccessToken(record.user) },
+        refreshToken: refresh.token,
+      };
+    },
+    { isolationLevel: "ReadCommitted" },
+  );
   if (!result) throw authenticationError("INVALID_REFRESH_TOKEN");
   return result;
 };
 
-module.exports = { registerUser, loginUser, refreshSession, findAuthenticatedUser };
+module.exports = {
+  registerUser,
+  loginUser,
+  refreshSession,
+  findAuthenticatedUser,
+};
