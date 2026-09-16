@@ -5,7 +5,7 @@ const {
   createRefreshToken,
   hashRefreshToken,
 } = require("./tokenServices");
-const { prisma } = require("../config/prismaConfig");
+const { prisma } = require("../config/db");
 const userSelect = {
   id: true,
   full_name: true,
