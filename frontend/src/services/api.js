@@ -18,9 +18,11 @@ export async function apiRequest(endpoint, options = {}) {
     method,
     headers: {
       "Content-Type": "application/json",
+      "X-Csrf-Protection": "1",
       ...(currentAccessToken ? { Authorization: `Bearer ${currentAccessToken}` } : {}),
       ...headers,
     },
+    credentials: "include",
     ...customConfig,
   };
 
