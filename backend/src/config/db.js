@@ -9,7 +9,13 @@ const connectionString =
   process.env.DATABASE_URL ||
   "postgresql://placeholder:placeholder@localhost:5432/campushive_db?schema=public";
 
-const pool = new Pool({ connectionString });
+const pool = new Pool({
+  connectionString,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : undefined,
+});
 const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({
