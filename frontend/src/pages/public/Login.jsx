@@ -59,15 +59,7 @@ export function Login() {
           Log in
         </h1>
         <p className="mt-1 text-sm text-(--color-ink-soft) dark:text-(--color-paper)/60">
-          Try{" "}
-          <code className="rounded bg-(--color-paper-raised) px-1 dark:bg-(--color-ink-raised)">
-            ama.boateng@ug.edu.gh
-          </code>{" "}
-          /{" "}
-          <code className="rounded bg-(--color-paper-raised) px-1 dark:bg-(--color-ink-raised)">
-            password123
-          </code>{" "}
-          for a student account.
+          Welcome back to CampusHive.
         </p>
 
         <form onSubmit={handleSubmit} noValidate className="mt-6">
