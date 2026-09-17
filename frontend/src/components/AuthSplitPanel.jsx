@@ -19,8 +19,7 @@ export function AuthSplitPanel({ headline, points }) {
             {points.map((point) => (
               <li
                 key={point}
-                className="flex items-start gap-2 text-sm text-(--color-ink) dark:text-(--color-paper)"
-              >
+                className="flex items-start gap-2 text-sm text-(--color-ink) dark:text-(--color-paper)">
                 <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-(--color-moss) text-xs text-white">
                   ✓
                 </span>

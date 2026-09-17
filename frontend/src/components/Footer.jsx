@@ -23,32 +23,28 @@ export default function Footer() {
             <a
               href="#"
               aria-label="Instagram"
-              className="text-sm text-ink-soft transition hover:text-ink dark:text-paper/70 dark:hover:text-paper"
-            >
+              className="text-sm text-ink-soft transition hover:text-ink dark:text-paper/70 dark:hover:text-paper">
               Instagram
             </a>
 
             <a
               href="#"
               aria-label="LinkedIn"
-              className="text-sm text-ink-soft transition hover:text-ink dark:text-paper/70 dark:hover:text-paper"
-            >
+              className="text-sm text-ink-soft transition hover:text-ink dark:text-paper/70 dark:hover:text-paper">
               LinkedIn
             </a>
 
             <a
               href="#"
               aria-label="X"
-              className="text-sm text-ink-soft transition hover:text-ink dark:text-paper/70 dark:hover:text-paper"
-            >
+              className="text-sm text-ink-soft transition hover:text-ink dark:text-paper/70 dark:hover:text-paper">
               X
             </a>
 
             <a
               href="#"
               aria-label="GitHub"
-              className="text-sm text-ink-soft transition hover:text-ink dark:text-paper/70 dark:hover:text-paper"
-            >
+              className="text-sm text-ink-soft transition hover:text-ink dark:text-paper/70 dark:hover:text-paper">
               GitHub
             </a>
           </div>

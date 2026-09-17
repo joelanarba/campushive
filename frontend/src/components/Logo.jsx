@@ -8,15 +8,13 @@ export default function Logo({ className = "" }) {
       className={cn(
         "inline-flex items-center gap-2 text-[1.05rem] font-semibold text-ink no-underline dark:text-paper",
         className,
-      )}
-    >
+      )}>
       <svg
         width="22"
         height="22"
         viewBox="0 0 22 22"
         aria-hidden="true"
-        className="shrink-0"
-      >
+        className="shrink-0">
         <polygon
           points="11,1 20,6 20,16 11,21 2,16 2,6"
           fill="#e8a33d"

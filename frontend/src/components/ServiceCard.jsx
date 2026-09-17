@@ -49,8 +49,7 @@ export default function ServiceCard({
           </span>
           <Link
             to={to}
-            className="font-data text-sm font-semibold text-honey-deep no-underline hover:underline"
-          >
+            className="font-data text-sm font-semibold text-honey-deep no-underline hover:underline">
             View service
           </Link>
         </div>
