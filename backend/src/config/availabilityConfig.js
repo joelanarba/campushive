@@ -1,0 +1,4 @@
+const SCHEDULING_TIMEZONE = "Africa/Accra";
+const START_STEP_MINUTES = 15;
+const RESERVING_STATUSES = ["pending", "confirmed"];
+module.exports = { SCHEDULING_TIMEZONE, START_STEP_MINUTES, RESERVING_STATUSES };

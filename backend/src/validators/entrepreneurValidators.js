@@ -1,4 +1,9 @@
 const {
+  availabilityIdSchema,
+  createAvailabilitySchema,
+  patchAvailabilitySchema,
+} = require("./availabilityValidators");
+const {
   serviceIdSchema,
   ownerServiceQuerySchema,
   createServiceSchema,
@@ -24,4 +29,13 @@ const updateProfileSchema = Joi.object({
   .required()
   .unknown(false);
 
-module.exports = { updateProfileSchema, serviceIdSchema, ownerServiceQuerySchema, createServiceSchema, patchServiceSchema };
+module.exports = {
+  updateProfileSchema,
+  serviceIdSchema,
+  ownerServiceQuerySchema,
+  createServiceSchema,
+  patchServiceSchema,
+  availabilityIdSchema,
+  createAvailabilitySchema,
+  patchAvailabilitySchema,
+};

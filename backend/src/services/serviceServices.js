@@ -92,5 +92,5 @@ const listPublicServices = (query) => listServices(query, publicVisibility, publ
 const getPublicService = (id) => findService(id, publicVisibility, publicSelect);
 const listAdminServices = (query) => listServices(query, {}, adminSelect);
 const getAdminService = (id) => findService(id, {}, adminSelect);
-module.exports = { domainError, categorySelect, listServices, findService, createOwnedService,
+module.exports = { publicVisibility, domainError, categorySelect, listServices, findService, createOwnedService,
   patchOwnedService, listPublicServices, getPublicService, listAdminServices, getAdminService };

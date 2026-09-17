@@ -1,4 +1,10 @@
 const {
+  createAvailability,
+  listAvailability,
+  patchAvailability,
+  archiveAvailability,
+} = require("./availabilityServices");
+const {
   prisma,
 } = require("../config/prismaConfig");
 const {
@@ -7,23 +13,14 @@ const {
   createOwnedService,
   patchOwnedService,
 } = require("./serviceServices");
+const {
+  resolveOwnProfile,
+} = require("./entrepreneurProfileServices");
 
 const profileError = (code) => {
   const error = new Error("Unable to update entrepreneur profile");
   error.code = code;
   return error;
-};
-
-const resolveOwnProfile = async (userId) => {
-  const profiles = await prisma.entrepreneurProfile.findMany({
-    where: { user_id: userId },
-    select: { id: true },
-    take: 2,
-  });
-  if (profiles.length === 0) throw profileError("PROFILE_NOT_FOUND");
-  if (profiles.length > 1) throw profileError("MULTIPLE_PROFILES");
-
-  return profiles[0];
 };
 
 const updateOwnProfile = async (userId, input) => {
@@ -78,4 +75,15 @@ const archiveService = async (userId, id) => {
   return patchOwnedService(id, ownerScope(profile.id, userId), { is_active: false });
 };
 
-module.exports = { updateOwnProfile, createService, getServices, getService, patchService, archiveService };
+module.exports = {
+  updateOwnProfile,
+  createService,
+  getServices,
+  getService,
+  patchService,
+  archiveService,
+  createAvailability,
+  listAvailability,
+  patchAvailability,
+  archiveAvailability,
+};
