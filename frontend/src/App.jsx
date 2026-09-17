@@ -9,6 +9,8 @@ import ServiceDetails from "./pages/public/ServiceDetails";
 
 import EntrepreneurDashboard from "./pages/dashboard/EntrepreneurDashboard";
 import ServiceForm from "./pages/dashboard/ServiceForm";
+import AvailabilityManager from "./pages/dashboard/AvailabilityManager";
+import StudentDashboard from "./pages/dashboard/StudentDashboard";
 
 function App() {
   return (
@@ -41,6 +43,24 @@ function App() {
           element={
             <ProtectedRoute allow={["entrepreneur"]}>
               <ServiceForm />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard/entrepreneur/services/:id/availability" 
+          element={
+            <ProtectedRoute allow={["entrepreneur"]}>
+              <AvailabilityManager />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Student Dashboard */}
+        <Route 
+          path="/dashboard/student" 
+          element={
+            <ProtectedRoute allow={["student"]}>
+              <StudentDashboard />
             </ProtectedRoute>
           } 
         />

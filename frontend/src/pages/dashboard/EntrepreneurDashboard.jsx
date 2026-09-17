@@ -89,7 +89,10 @@ export default function EntrepreneurDashboard() {
                 </div>
                 
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button to={"/dashboard/entrepreneur/services/${svc.id}/edit"} variant="secondary" className="px-3 py-2 h-auto">
+                  <Button to={`/dashboard/entrepreneur/services/${svc.id}/availability`} variant="secondary" className="px-3 py-2 h-auto" title="Manage Schedule">
+                    <Clock size={16} />
+                  </Button>
+                  <Button to={`/dashboard/entrepreneur/services/${svc.id}/edit`} variant="secondary" className="px-3 py-2 h-auto">
                     <Edit2 size={16} />
                   </Button>
                   <button 

@@ -22,6 +22,7 @@ const serviceRoutes = require("./routes/serviceRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const entrepreneurRoutes = require("./routes/entrepreneurRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
 const { errorHandler } = require("./middlewares/errorHandler");
 const { clientOrigins } = require("./config/authConfig");
 
@@ -50,6 +51,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/entrepreneurs", entrepreneurRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 // Centralized error handling
 app.use(errorHandler);

@@ -91,4 +91,11 @@ api.createMyService = (data) => wrap(api.post("/entrepreneurs/me/services", data
 api.updateMyService = (id, data) => wrap(api.patch(`/entrepreneurs/me/services/${id}`, data));
 api.deleteMyService = (id) => wrap(api.delete(`/entrepreneurs/me/services/${id}`));
 
+// Booking routes
+api.getAvailability = (serviceId, from, to) => wrap(api.get(`/services/${serviceId}/availability?date_from=${from}&date_to=${to}`));
+api.createBooking = (data) => wrap(api.post("/bookings", data));
+api.listStudentBookings = () => wrap(api.get("/bookings/me"));
+api.listEntrepreneurBookings = () => wrap(api.get("/bookings/provider"));
+api.updateBookingStatus = (id, status) => wrap(api.patch(`/bookings/${id}`, { status }));
+
 export default api;
