@@ -42,7 +42,7 @@ export default function Navbar() {
           <ThemeToggle />
           {currentUser ? (
             <>
-              <Button to="/dashboard" variant="ghost">
+              <Button to={currentUser.role?.includes("entrepreneur") ? "/dashboard/entrepreneur" : "/dashboard/student"} variant="ghost">
                 Dashboard
               </Button>
               <Button onClick={handleLogout} variant="secondary">
@@ -89,7 +89,7 @@ export default function Navbar() {
             <div className="flex flex-col gap-3 mt-2">
               {currentUser ? (
                 <>
-                  <Button to="/dashboard" variant="ghost" className="w-full justify-center" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button to={currentUser.role?.includes("entrepreneur") ? "/dashboard/entrepreneur" : "/dashboard/student"} variant="ghost" className="w-full justify-center" onClick={() => setIsMobileMenuOpen(false)}>
                     Dashboard
                   </Button>
                   <Button onClick={handleLogout} variant="secondary" className="w-full justify-center">

@@ -11,7 +11,7 @@ export function ProtectedRoute({ children, allow }) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  if (allow && !allow.some((r) => currentUser.roles?.includes(r))) {
+  if (allow && !allow.some((r) => currentUser.role?.includes(r))) {
     return <Navigate to="/" replace />;
   }
 

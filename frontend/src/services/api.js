@@ -82,6 +82,13 @@ api.me = () => wrap(api.get("/auth/me"));
 api.listServices = () => wrap(api.get("/services"));
 api.getService = (id) => wrap(api.get(`/services/${id}`));
 api.listCategories = () => wrap(api.get("/categories"));
-api.updateEntrepreneurProfile = (updates) => wrap(api.patch("/entrepreneurs/profile", updates));
+api.updateEntrepreneurProfile = (updates) => wrap(api.patch("/entrepreneurs/me", updates));
+
+// Entrepreneur specific service management routes
+api.listMyServices = () => wrap(api.get("/entrepreneurs/me/services"));
+api.getMyService = (id) => wrap(api.get(`/entrepreneurs/me/services/${id}`));
+api.createMyService = (data) => wrap(api.post("/entrepreneurs/me/services", data));
+api.updateMyService = (id, data) => wrap(api.patch(`/entrepreneurs/me/services/${id}`, data));
+api.deleteMyService = (id) => wrap(api.delete(`/entrepreneurs/me/services/${id}`));
 
 export default api;
