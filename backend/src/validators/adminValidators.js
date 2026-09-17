@@ -1,3 +1,12 @@
+const {
+  serviceIdSchema,
+  categoryIdSchema,
+  paginationSchema,
+  adminServiceQuerySchema,
+  createCategorySchema,
+  patchCategorySchema,
+} = require("./serviceValidators");
+
 const Joi = require("joi");
 
 const listUsersSchema = Joi.object({
@@ -26,4 +35,12 @@ const listUsersSchema = Joi.object({
     return { ...value, page, limit };
   });
 
-module.exports = { listUsersSchema };
+module.exports = {
+  listUsersSchema,
+  serviceIdSchema,
+  categoryIdSchema,
+  paginationSchema,
+  adminServiceQuerySchema,
+  createCategorySchema,
+  patchCategorySchema,
+};

@@ -77,10 +77,9 @@ Edits preserve verification_status and rejection_reason for pending, verified,
 rejected, and suspended profiles. No existing edit-triggered re-verification workflow
 was found, so none is introduced. Registration still creates pending profiles.
 
-**Discovery gap:** the inspected backend has no public provider discovery endpoint
-or verification workflow. Backend exclusion of unverified providers cannot be
-confirmed. Frontend filtering would not establish that protection. Implementing
-discovery and its verified-only policy remains outside this endpoint's scope.
+**Discovery:** issue #9 now provides public service list/detail endpoints. Both require
+an active service and a currently verified entrepreneur on the backend. Profile edits
+continue to preserve verification metadata. See [service management](service-management.md).
 
 ## Manual checks
 

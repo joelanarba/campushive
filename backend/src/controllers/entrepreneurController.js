@@ -1,5 +1,19 @@
-const { updateProfileSchema } = require("../validators/entrepreneurValidators");
-const { updateOwnProfile } = require("../services/entrepreneurServices");
+const {
+  updateProfileSchema,
+  serviceIdSchema,
+  ownerServiceQuerySchema,
+  createServiceSchema,
+  patchServiceSchema,
+} = require("../validators/entrepreneurValidators");
+const {
+  updateOwnProfile,
+  createService,
+  getServices,
+  getService,
+  patchService,
+  archiveService,
+} = require("../services/entrepreneurServices");
+const { validationFailure, serviceFailure } = require("./serviceResponses");
 
 const updateProfile = async (req, res, next) => {
   res.set("Cache-Control", "no-store");
@@ -40,4 +54,101 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { updateProfile };
+const createOwnService = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const body = createServiceSchema.validate(req.body, { abortEarly: false });
+    if (body.error) return validationFailure(res, body.error);
+    const result = await createService(req.user.id, body.value);
+    return res
+      .status(201)
+      .json({
+        message: "Service created successfully",
+        data: { service: result },
+      });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+const listOwnServices = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const query = ownerServiceQuerySchema.validate(req.query, {
+      abortEarly: false,
+    });
+    if (query.error) return validationFailure(res, query.error);
+    const result = await getServices(req.user.id, query.value);
+    return res
+      .status(200)
+      .json({ message: "Services retrieved successfully", data: result });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+const getOwnService = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const params = serviceIdSchema.validate(req.params, { abortEarly: false });
+    if (params.error) return validationFailure(res, params.error);
+    const result = await getService(req.user.id, params.value.serviceId);
+    return res
+      .status(200)
+      .json({
+        message: "Service retrieved successfully",
+        data: { service: result },
+      });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+const updateOwnService = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const params = serviceIdSchema.validate(req.params, { abortEarly: false });
+    if (params.error) return validationFailure(res, params.error);
+    const body = patchServiceSchema.validate(req.body, { abortEarly: false });
+    if (body.error) return validationFailure(res, body.error);
+    const result = await patchService(
+      req.user.id,
+      params.value.serviceId,
+      body.value,
+    );
+    return res
+      .status(200)
+      .json({
+        message: "Service updated successfully",
+        data: { service: result },
+      });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+const deleteOwnService = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const params = serviceIdSchema.validate(req.params, { abortEarly: false });
+    if (params.error) return validationFailure(res, params.error);
+    const result = await archiveService(req.user.id, params.value.serviceId);
+    return res
+      .status(200)
+      .json({
+        message: "Service archived successfully",
+        data: { service: result },
+      });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+module.exports = {
+  updateProfile,
+  createOwnService,
+  listOwnServices,
+  getOwnService,
+  updateOwnService,
+  deleteOwnService,
+};

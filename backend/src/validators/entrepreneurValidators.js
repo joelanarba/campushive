@@ -1,3 +1,10 @@
+const {
+  serviceIdSchema,
+  ownerServiceQuerySchema,
+  createServiceSchema,
+  patchServiceSchema,
+} = require("./serviceValidators");
+
 const Joi = require("joi");
 
 const updateProfileSchema = Joi.object({
@@ -17,4 +24,4 @@ const updateProfileSchema = Joi.object({
   .required()
   .unknown(false);
 
-module.exports = { updateProfileSchema };
+module.exports = { updateProfileSchema, serviceIdSchema, ownerServiceQuerySchema, createServiceSchema, patchServiceSchema };

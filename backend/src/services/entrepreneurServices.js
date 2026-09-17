@@ -1,4 +1,12 @@
-const { prisma } = require("../config/prismaConfig");
+const {
+  prisma,
+} = require("../config/prismaConfig");
+const {
+  listServices,
+  findService,
+  createOwnedService,
+  patchOwnedService,
+} = require("./serviceServices");
 
 const profileError = (code) => {
   const error = new Error("Unable to update entrepreneur profile");
@@ -6,7 +14,7 @@ const profileError = (code) => {
   return error;
 };
 
-const updateOwnProfile = async (userId, input) => {
+const resolveOwnProfile = async (userId) => {
   const profiles = await prisma.entrepreneurProfile.findMany({
     where: { user_id: userId },
     select: { id: true },
@@ -15,6 +23,11 @@ const updateOwnProfile = async (userId, input) => {
   if (profiles.length === 0) throw profileError("PROFILE_NOT_FOUND");
   if (profiles.length > 1) throw profileError("MULTIPLE_PROFILES");
 
+  return profiles[0];
+};
+
+const updateOwnProfile = async (userId, input) => {
+  const profile = await resolveOwnProfile(userId);
   // Copy only supplied editable fields, never ownership or approval metadata.
   const data = {};
   for (const field of ["business_name", "description", "phone_number", "location"]) {
@@ -23,7 +36,7 @@ const updateOwnProfile = async (userId, input) => {
 
   try {
     return await prisma.entrepreneurProfile.update({
-      where: { id: profiles[0].id, user_id: userId },
+      where: { id: profile.id, user_id: userId },
       data,
       select: {
         id: true,
@@ -43,4 +56,26 @@ const updateOwnProfile = async (userId, input) => {
   }
 };
 
-module.exports = { updateOwnProfile };
+const ownerScope = (profileId, userId) => ({ entrepreneur_id: profileId, entrepreneur: { user_id: userId } });
+const createService = async (userId, input) => {
+  const profile = await resolveOwnProfile(userId);
+  return createOwnedService(profile.id, input);
+};
+const getServices = async (userId, query) => {
+  const profile = await resolveOwnProfile(userId);
+  return listServices(query, ownerScope(profile.id, userId));
+};
+const getService = async (userId, id) => {
+  const profile = await resolveOwnProfile(userId);
+  return findService(id, ownerScope(profile.id, userId));
+};
+const patchService = async (userId, id, input) => {
+  const profile = await resolveOwnProfile(userId);
+  return patchOwnedService(id, ownerScope(profile.id, userId), input);
+};
+const archiveService = async (userId, id) => {
+  const profile = await resolveOwnProfile(userId);
+  return patchOwnedService(id, ownerScope(profile.id, userId), { is_active: false });
+};
+
+module.exports = { updateOwnProfile, createService, getServices, getService, patchService, archiveService };
