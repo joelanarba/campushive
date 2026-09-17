@@ -15,9 +15,9 @@ export function AppProvider({ children }) {
     (async () => {
       const refreshed = await api.refresh();
       if (!cancelled && refreshed.ok) {
-        setAccessToken(refreshed.data.access_token);
+        setAccessToken(refreshed.data.data.access_token);
         const me = await api.me();
-        if (!cancelled && me.ok) setCurrentUser(me.data);
+        if (!cancelled && me.ok) setCurrentUser(me.data.data.user);
       }
       if (!cancelled) setBootstrapping(false);
     })();
@@ -33,8 +33,8 @@ export function AppProvider({ children }) {
         api.listServices(),
         api.listCategories(),
       ]);
-      if (s.ok) setServices(s.data);
-      if (c.ok) setCategories(c.data);
+      if (s.ok) setServices(s.data.data);
+      if (c.ok) setCategories(c.data.data);
     })();
   }, []);
 
@@ -42,9 +42,9 @@ export function AppProvider({ children }) {
     const res = await api.login({ email, password });
     if (!res.ok) return { ok: false, error: res.error };
 
-    setAccessToken(res.data.access_token);
+    setAccessToken(res.data.data.access_token);
     const me = await api.me();
-    const user = me.ok ? me.data : null;
+    const user = me.ok ? me.data.data.user : null;
     setCurrentUser(user);
     return { ok: true, user };
   }
@@ -69,18 +69,18 @@ export function AppProvider({ children }) {
     if (!res.ok) return { ok: false, error: res.error };
 
     // If the backend returns a token on register, use it; otherwise log in.
-    if (res.data?.access_token) {
-      setAccessToken(res.data.access_token);
+    if (res.data.data?.access_token) {
+      setAccessToken(res.data.data.access_token);
     } else {
       const loginRes = await api.login({
         email: form.email,
         password: form.password,
       });
-      if (loginRes.ok) setAccessToken(loginRes.data.access_token);
+      if (loginRes.ok) setAccessToken(loginRes.data.data.access_token);
     }
 
     const me = await api.me();
-    const user = me.ok ? me.data : null;
+    const user = me.ok ? me.data.data.user : null;
     setCurrentUser(user);
     return { ok: true, user };
   }
@@ -96,7 +96,7 @@ export function AppProvider({ children }) {
     const res = await api.updateEntrepreneurProfile(updates);
     if (res.ok) {
       const me = await api.me();
-      if (me.ok) setCurrentUser(me.data);
+      if (me.ok) setCurrentUser(me.data.data.user);
     }
     return res;
   }
