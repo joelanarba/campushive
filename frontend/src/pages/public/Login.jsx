@@ -14,6 +14,7 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -91,8 +92,16 @@ export function Login() {
             autoComplete="current-password"
           />
 
-          <Button type="submit" variant="primary" className="w-full">
+          {/* <Button type="submit" variant="primary" className="w-full">
             Log in
+          </Button> */}
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full"
+            disabled={submitting}
+          >
+            {submitting ? "Logging in…" : "Log in"}
           </Button>
         </form>
 
