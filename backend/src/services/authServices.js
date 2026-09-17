@@ -6,6 +6,7 @@ const {
   hashRefreshToken,
 } = require("./tokenServices");
 const { prisma } = require("../config/db");
+const { domainError } = require("./serviceServices");
 const userSelect = {
   id: true,
   full_name: true,
@@ -115,6 +116,20 @@ const findAuthenticatedUser = (id) =>
     select: { id: true, role: true },
   });
 
+const getCurrentUserProfile = async (id) => {
+  const record = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      ...userSelect,
+      entrepreneur_profiles: { ...userSelect.entrepreneur_profiles, take: 2 },
+    },
+  });
+  if (!record) throw authenticationError("INVALID_CREDENTIALS");
+  const { entrepreneur_profiles, ...user } = record;
+  if (entrepreneur_profiles.length > 1) throw domainError("MULTIPLE_PROFILES");
+  return { ...user, entrepreneur_profile: entrepreneur_profiles[0] || null };
+};
+
 const loginUser = async ({ email, password }) => {
   const dummyHash = await dummyPasswordHash;
   const user = await prisma.user.findUnique({
@@ -202,6 +217,7 @@ const refreshSession = async (token) => {
 };
 
 module.exports = {
+  getCurrentUserProfile,
   registerUser,
   loginUser,
   refreshSession,

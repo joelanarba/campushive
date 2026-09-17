@@ -1,6 +1,7 @@
 const { prisma } = require("../config/db");
 const { domainError } = require("./serviceServices");
 const { validateBookingAvailability } = require("../services/availabilityServices");
+const { resolveOwnProfile } = require("./entrepreneurProfileServices");
 const crypto = require("crypto");
 
 const createBooking = async (userId, payload) => prisma.$transaction(async (tx) => {
@@ -53,10 +54,7 @@ const listStudentBookings = async (userId) => {
 };
 
 const listEntrepreneurBookings = async (userId) => {
-  const profile = await prisma.entrepreneurProfile.findUnique({
-    where: { user_id: userId }
-  });
-  if (!profile) return [];
+  const profile = await resolveOwnProfile(userId);
 
   return prisma.booking.findMany({
     where: { service: { entrepreneur_id: profile.id } },
@@ -72,19 +70,50 @@ const listEntrepreneurBookings = async (userId) => {
   });
 };
 
-const updateBookingStatus = async (userId, bookingId, status) => {
-  // We'll let both entrepreneur (to confirm/complete) and student (to cancel) use this for now
-  const booking = await prisma.booking.findUnique({
+const updateBookingStatus = (userId, bookingId, status) => prisma.$transaction(async (tx) => {
+  const initial = await tx.booking.findUnique({
     where: { id: bookingId },
-    include: { service: { select: { entrepreneur_id: true } } }
+    select: { service: { select: { entrepreneur_id: true } } },
+  });
+  if (!initial) throw domainError("BOOKING_NOT_FOUND");
+
+  // Profile first, then booking: suspension and booking creation take the same
+  // profile lock. Re-read state after locking under ReadCommitted isolation.
+  await tx.$queryRaw`SELECT id FROM entrepreneur_profiles
+    WHERE id = ${initial.service.entrepreneur_id}::uuid FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM bookings WHERE id = ${bookingId}::uuid FOR UPDATE`;
+  const booking = await tx.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      id: true, user_id: true, status: true,
+      service: { select: { entrepreneur: { select: {
+        user_id: true, verification_status: true,
+      } } } },
+    },
   });
   if (!booking) throw domainError("BOOKING_NOT_FOUND");
-
-  return prisma.booking.update({
+  const actor = await tx.user.findUnique({ where: { id: userId }, select: { role: true } });
+  const provider = booking.service.entrepreneur;
+  const isOwner = provider.user_id === userId && actor?.role.includes("entrepreneur");
+  const isCustomer = booking.user_id === userId;
+  if (!isOwner && !isCustomer) throw domainError("BOOKING_NOT_FOUND");
+  if (status !== "cancelled") {
+    if (!isOwner) throw domainError("BOOKING_PERMISSION_DENIED");
+    if (provider.verification_status !== "verified") throw domainError("PROVIDER_NOT_VERIFIED");
+  }
+  const allowed = {
+    confirmed: ["pending"],
+    completed: ["confirmed"],
+    cancelled: ["pending", "confirmed"],
+  };
+  if (!Object.hasOwn(allowed, status) || !allowed[status].includes(booking.status)) {
+    throw domainError("BOOKING_STATUS_CONFLICT");
+  }
+  return tx.booking.update({
     where: { id: bookingId },
-    data: { status }
+    data: { status },
   });
-};
+}, { isolationLevel: "ReadCommitted" });
 
 module.exports = {
   createBooking,

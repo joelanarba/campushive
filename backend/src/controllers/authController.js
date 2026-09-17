@@ -3,10 +3,12 @@ const {
   loginSchema,
 } = require("../validators/authValidators");
 const {
+  getCurrentUserProfile,
   registerUser,
   loginUser,
   refreshSession,
 } = require("../services/authServices");
+const { serviceFailure } = require("./serviceResponses");
 const {
   refreshCookieName,
   refreshCookieOptions,
@@ -95,11 +97,14 @@ const refresh = async (req, res, next) => {
   }
 };
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = async (req, res, next) => {
   res.set("Cache-Control", "no-store");
-  return res
-    .status(200)
-    .json({ message: "Authenticated user", data: { user: req.user } });
+  try {
+    const user = await getCurrentUserProfile(req.user.id);
+    return res.status(200).json({ message: "Authenticated user", data: { user } });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
 };
 
 module.exports = { register, login, refresh, getCurrentUser };

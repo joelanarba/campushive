@@ -9,6 +9,16 @@ const {
 
 const Joi = require("joi");
 
+const entrepreneurIdSchema = Joi.object({
+  entrepreneurId: Joi.string().guid().required(),
+}).unknown(false);
+const emptyRequestSchema = Joi.object({}).unknown(false);
+const rejectEntrepreneurSchema = Joi.object({
+  rejection_reason: Joi.string().trim().min(1).max(2000).required(),
+})
+  .unknown(false)
+  .required();
+
 const listUsersSchema = Joi.object({
   page: Joi.string()
     .pattern(/^[1-9][0-9]*$/)
@@ -36,6 +46,9 @@ const listUsersSchema = Joi.object({
   });
 
 module.exports = {
+  entrepreneurIdSchema,
+  emptyRequestSchema,
+  rejectEntrepreneurSchema,
   listUsersSchema,
   serviceIdSchema,
   categoryIdSchema,

@@ -3,6 +3,12 @@ const {
   authorizeRoles,
 } = require("../middlewares/authMiddleware");
 const {
+  getEntrepreneurs,
+  getOneEntrepreneur,
+  approveProfile,
+  rejectProfile,
+  suspendProfile,
+  reopenProfile,
   getUsers,
   getServices,
   getService,
@@ -17,6 +23,43 @@ const express = require("express");
 
 const router = express.Router();
 router.get("/users", authenticate, authorizeRoles("admin"), getUsers);
+
+router.get(
+  "/entrepreneurs",
+  authenticate,
+  authorizeRoles("admin"),
+  getEntrepreneurs,
+);
+router.get(
+  "/entrepreneurs/:entrepreneurId",
+  authenticate,
+  authorizeRoles("admin"),
+  getOneEntrepreneur,
+);
+router.patch(
+  "/entrepreneurs/:entrepreneurId/approve",
+  authenticate,
+  authorizeRoles("admin"),
+  approveProfile,
+);
+router.patch(
+  "/entrepreneurs/:entrepreneurId/reject",
+  authenticate,
+  authorizeRoles("admin"),
+  rejectProfile,
+);
+router.patch(
+  "/entrepreneurs/:entrepreneurId/suspend",
+  authenticate,
+  authorizeRoles("admin"),
+  suspendProfile,
+);
+router.patch(
+  "/entrepreneurs/:entrepreneurId/reopen",
+  authenticate,
+  authorizeRoles("admin"),
+  reopenProfile,
+);
 
 router.get("/services", authenticate, authorizeRoles("admin"), getServices);
 router.get(
