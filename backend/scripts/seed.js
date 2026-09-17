@@ -28,7 +28,7 @@ async function seed() {
         email: 'demo_provider@ug.edu.gh',
         password_hash: 'dummy',
         full_name: 'Demo Provider',
-        role: 'entrepreneur',
+        role: ['entrepreneur'],
       }
     });
 
@@ -82,3 +82,4 @@ seed().catch(e => {
 }).finally(async () => {
   await prisma.$disconnect();
 });
+
