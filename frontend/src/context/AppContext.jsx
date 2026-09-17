@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import api from "../services/api";
-// import { api, setAccessToken } from "../lib/api";
+import api, { setAccessToken } from "../services/api";
 
 const AppContext = createContext(null);
 

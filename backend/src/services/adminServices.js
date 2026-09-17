@@ -1,6 +1,6 @@
 const {
   prisma,
-} = require("../config/prismaConfig");
+} = require("../config/db");
 const {
   listAdminServices,
   getAdminService,

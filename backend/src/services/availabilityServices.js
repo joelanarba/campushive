@@ -1,5 +1,5 @@
 const { DateTime } = require("luxon");
-const { prisma } = require("../config/prismaConfig");
+const { prisma } = require("../config/db");
 const { SCHEDULING_TIMEZONE, START_STEP_MINUTES, RESERVING_STATUSES } = require("../config/availabilityConfig");
 const { domainError, publicVisibility } = require("./serviceServices");
 const { resolveOwnProfile } = require("./entrepreneurProfileServices");

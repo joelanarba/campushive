@@ -1,4 +1,4 @@
-﻿const { prisma } = require("../config/prismaConfig");
+const { prisma } = require("../config/db");
 
 const auditAdminRoles = async () => {
   const users = await prisma.user.findMany({

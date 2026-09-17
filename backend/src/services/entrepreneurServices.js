@@ -6,7 +6,7 @@ const {
 } = require("./availabilityServices");
 const {
   prisma,
-} = require("../config/prismaConfig");
+} = require("../config/db");
 const {
   listServices,
   findService,

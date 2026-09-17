@@ -1,4 +1,4 @@
-const { prisma } = require("../config/prismaConfig");
+const { prisma } = require("../config/db");
 const { domainError, categorySelect } = require("./serviceServices");
 
 const listCategories = async ({ page, limit }) => {

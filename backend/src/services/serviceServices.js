@@ -3,7 +3,7 @@ const {
 } = require("@prisma/client");
 const {
   prisma,
-} = require("../config/prismaConfig");
+} = require("../config/db");
 
 const domainError = (code) => Object.assign(new Error("Service operation failed"), { code });
 const categorySelect = { id: true, category_name: true, tag: true, description: true, created_at: true };

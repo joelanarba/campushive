@@ -1,4 +1,4 @@
-const { prisma } = require("../config/prismaConfig");
+const { prisma } = require("../config/db");
 const { domainError } = require("./serviceServices");
 
 const resolveOwnProfile = async (userId, db = prisma) => {

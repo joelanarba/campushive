@@ -5,6 +5,12 @@ const API_BASE_URL =
  * Common API request helper.
  * Handles base URL configuration, headers, JSON serialization, and error extraction.
  */
+let currentAccessToken = null;
+
+export function setAccessToken(token) {
+  currentAccessToken = token;
+}
+
 export async function apiRequest(endpoint, options = {}) {
   const { method = "GET", body, headers = {}, ...customConfig } = options;
 
@@ -12,6 +18,7 @@ export async function apiRequest(endpoint, options = {}) {
     method,
     headers: {
       "Content-Type": "application/json",
+      ...(currentAccessToken ? { Authorization: `Bearer ${currentAccessToken}` } : {}),
       ...headers,
     },
     ...customConfig,
@@ -55,5 +62,23 @@ export const api = {
   delete: (endpoint, options = {}) =>
     apiRequest(endpoint, { ...options, method: "DELETE" }),
 };
+
+// Helper for wrapping methods to return {ok, data, error} format used by AppContext
+const wrap = async (promise) => {
+  try {
+    const data = await promise;
+    return { ok: true, data };
+  } catch (error) {
+    return { ok: false, error: error.message, status: error.status, data: error.data };
+  }
+};
+
+api.login = (credentials) => wrap(api.post("/auth/login", credentials));
+api.register = (payload) => wrap(api.post("/auth/register", payload));
+api.refresh = () => wrap(apiRequest("/auth/refresh", { method: "POST", credentials: "include" }));
+api.me = () => wrap(api.get("/auth/me"));
+api.listServices = () => wrap(api.get("/services"));
+api.listCategories = () => wrap(api.get("/categories"));
+api.updateEntrepreneurProfile = (updates) => wrap(api.patch("/entrepreneurs/profile", updates));
 
 export default api;
