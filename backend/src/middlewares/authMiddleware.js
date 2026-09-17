@@ -50,6 +50,13 @@ const protectAuthCookies = (req, res, next) => {
       (!origin || req.get("x-csrf-protection") !== "1")) ||
     (cookieSameSite === "lax" && req.get("sec-fetch-site") === "cross-site")
   ) {
+    console.error("protectAuthCookies REJECTED:", {
+      origin,
+      included: clientOrigins.includes(origin),
+      cookieSameSite,
+      csrf: req.get("x-csrf-protection"),
+      secFetchSite: req.get("sec-fetch-site"),
+    });
     return res
       .status(403)
       .json({ message: "Authentication request origin is not allowed" });
