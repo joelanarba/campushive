@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Edit2, Trash2, MapPin, Clock, Calendar, CheckCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, MapPin, Clock, Calendar, Briefcase, Activity } from "lucide-react";
 import api from "../../services/api";
 import { useApp } from "../../context/AppContext";
 import Button from "../../components/Button";
+import { StatCard } from "../../components/StatCard";
+import { StatusBanner } from "../../components/StatusBanner";
 
 export default function EntrepreneurDashboard() {
   const { currentUser } = useApp();
   const [services, setServices] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const profile = currentUser?.entrepreneur_profile;
 
   const fetchData = async () => {
     setLoading(true);
@@ -40,25 +44,65 @@ export default function EntrepreneurDashboard() {
   };
 
   const handleUpdateBooking = async (id, status) => {
-    if (window.confirm("Mark booking as ?")) {
+    if (window.confirm(`Mark booking as ${status}?`)) {
       const res = await api.updateBookingStatus(id, status);
       if (res.ok) fetchData();
       else alert(res.error || "Failed to update booking");
     }
   };
 
+  const nextStepByStatus = {
+    pending: "You'll be able to receive bookings as soon as an admin reviews your profile.",
+    rejected: "Update your profile with the details below, then it will be reviewed again.",
+    suspended: "Contact an admin to resolve this before you can receive new bookings.",
+    verified: "You are verified and can receive bookings!",
+  };
+
+  const upcomingBookings = bookings.filter(b => ['pending', 'confirmed'].includes(b.status));
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-ink dark:text-paper">Provider Dashboard</h1>
           <p className="text-ink-soft dark:text-paper/70 mt-1">
-            Welcome back, {currentUser?.entrepreneur_profile?.business_name || currentUser?.full_name}
+            Welcome back, {profile?.business_name || currentUser?.full_name}
           </p>
         </div>
         <Button to="/dashboard/entrepreneur/services/new" className="gap-2">
           <Plus size={18} /> Add New Service
         </Button>
+      </div>
+
+      {profile && (
+        <div className="mb-8">
+          <StatusBanner
+            status={profile.verification_status}
+            reason={profile.rejection_reason}
+            nextStep={nextStepByStatus[profile.verification_status]}
+          />
+        </div>
+      )}
+
+      <div className="mb-10 grid gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={<Briefcase size={20} />}
+          value={services.length}
+          label="Services listed"
+          accent="honey"
+        />
+        <StatCard
+          icon={<Clock size={20} />}
+          value={upcomingBookings.length}
+          label="Upcoming bookings"
+          accent="moss"
+        />
+        <StatCard
+          icon={<Activity size={20} />}
+          value={bookings.length}
+          label="Total bookings"
+          accent="clay"
+        />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
