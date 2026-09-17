@@ -80,6 +80,7 @@ api.register = (payload) => wrap(api.post("/auth/register", payload));
 api.refresh = () => wrap(apiRequest("/auth/refresh", { method: "POST", credentials: "include" }));
 api.me = () => wrap(api.get("/auth/me"));
 api.listServices = () => wrap(api.get("/services"));
+api.getService = (id) => wrap(api.get(`/services/${id}`));
 api.listCategories = () => wrap(api.get("/categories"));
 api.updateEntrepreneurProfile = (updates) => wrap(api.patch("/entrepreneurs/profile", updates));
 

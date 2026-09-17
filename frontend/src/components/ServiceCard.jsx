@@ -51,7 +51,7 @@ export default function ServiceCard({
             to={to}
             className="font-data text-sm font-semibold text-honey-deep no-underline hover:underline"
           >
-            View provider
+            View service
           </Link>
         </div>
       )}

@@ -4,6 +4,7 @@ import { Register } from "./pages/public/Register";
 import { Login } from "./pages/public/Login";
 import Landing from "./pages/public/Landing";
 import ServicesSearch from "./pages/public/ServicesSearch";
+import ServiceDetails from "./pages/public/ServiceDetails";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Landing />} />
         <Route path="/services" element={<ServicesSearch />} />
+        <Route path="/services/:id" element={<ServiceDetails />} />
 
         <Route
           path="*"

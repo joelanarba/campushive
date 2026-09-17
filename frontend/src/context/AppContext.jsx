@@ -33,8 +33,8 @@ export function AppProvider({ children }) {
         api.listServices(),
         api.listCategories(),
       ]);
-      if (s.ok) setServices(s.data.data);
-      if (c.ok) setCategories(c.data.data);
+      if (s.ok) setServices(s.data.data.services);
+      if (c.ok) setCategories(c.data.data.categories);
     })();
   }, []);
 
