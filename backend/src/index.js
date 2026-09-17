@@ -45,6 +45,17 @@ app.get("/", (req, res) => {
   });
 });
 
+// Health check endpoint
+app.get("/health", async (req, res) => {
+  try {
+    const { prisma } = require("./config/db");
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ status: "healthy", database: "connected" });
+  } catch (error) {
+    res.status(503).json({ status: "unhealthy", database: "disconnected" });
+  }
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);

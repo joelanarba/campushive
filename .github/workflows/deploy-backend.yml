@@ -1,0 +1,36 @@
+name: Deploy Backend to EC2
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy via AWS Systems Manager (SSM)
+        run: |
+          aws ssm send-command \
+            --instance-ids "i-07bab93c0a638f6af" \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands='[
+              "cd /home/ubuntu/campushive || git clone https://github.com/joelanarba/campushive.git /home/ubuntu/campushive",
+              "cd /home/ubuntu/campushive",
+              "git fetch origin main",
+              "git reset --hard origin/main",
+              "cd backend",
+              "npm install",
+              "npx prisma generate",
+              "npx prisma migrate deploy",
+              "pm2 restart backend || pm2 start src/index.js --name backend"
+            ]' \
+            --comment "Deploying backend from GitHub Actions"
