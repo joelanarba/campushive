@@ -1,5 +1,5 @@
-﻿const { prisma } = require("../config/db");
-const { domainError } = require("../utils/errors");
+const { prisma } = require("../config/db");
+const { domainError } = require("./serviceServices");
 const { validateBookingAvailability } = require("../services/availabilityServices");
 const crypto = require("crypto");
 
