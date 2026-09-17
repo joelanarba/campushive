@@ -65,7 +65,7 @@ export function Register() {
       setErrors({ email: result.error });
       return;
     }
-    navigate(form.role === "entrepreneur" ? "/dashboard" : "/services");
+    navigate(form.role === "entrepreneur" ? "/dashboard/entrepreneur" : "/services");
   }
 
   const points =

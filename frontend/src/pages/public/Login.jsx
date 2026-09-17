@@ -37,9 +37,9 @@ export function Login() {
 
     const dest = location.state?.from;
     if (dest) navigate(dest);
-    else if (result.user?.roles?.includes("entrepreneur"))
-      navigate("/dashboard");
-    else if (result.user?.roles?.includes("admin")) navigate("/admin");
+    else if (result.user?.role?.includes("entrepreneur"))
+      navigate("/dashboard/entrepreneur");
+    else if (result.user?.role?.includes("admin")) navigate("/admin");
     else navigate("/services");
   }
 
