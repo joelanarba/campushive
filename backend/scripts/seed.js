@@ -11,21 +11,18 @@ async function seed() {
   ];
 
   for (const cat of categories) {
-    await prisma.serviceCategory.upsert({
-      where: { tag: cat.tag },
-      update: {},
-      create: cat,
-    });
+    const existing = await prisma.serviceCategory.findFirst({ where: { tag: cat.tag } });
+    if (!existing) {
+      await prisma.serviceCategory.create({ data: cat });
+    }
   }
 
   console.log('Categories seeded.');
 
-  // Optionally, create a dummy entrepreneur and services if there are no services.
   const servicesCount = await prisma.service.count();
   if (servicesCount === 0) {
     console.log('No services found. Creating dummy provider and services...');
     
-    // Create dummy user
     const user = await prisma.user.create({
       data: {
         email: 'demo_provider@ug.edu.gh',
@@ -42,11 +39,11 @@ async function seed() {
         description: 'The best cuts on campus.',
         location: 'Commonwealth Hall, Block C',
         phone_number: '0551234567',
-        verification_status: 'verified', // crucial to show up on public list!
+        verification_status: 'verified',
       }
     });
 
-    const beautyCat = await prisma.serviceCategory.findUnique({ where: { tag: 'beauty' } });
+    const beautyCat = await prisma.serviceCategory.findFirst({ where: { tag: 'beauty' } });
     
     await prisma.service.create({
       data: {
