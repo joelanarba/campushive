@@ -127,7 +127,7 @@ export default function Landing() {
               {displayCategories.map((cat) => (
                 <li key={cat.tag}>
                   <Link
-                    to={"/services?category=${cat.tag}"}
+                    to={`/services?category=${cat.tag}`}
                     className="block rounded-lg border border-line bg-paper-raised px-4 py-6 text-center font-data font-medium text-ink no-underline hover:border-honey-deep dark:border-line-dark dark:bg-ink-raised dark:text-paper"
                   >
                     {cat.category_name}
@@ -159,8 +159,8 @@ export default function Landing() {
                   category={svc.category?.category_name || "Uncategorized"}
                   name={svc.title}
                   provider={svc.entrepreneur?.business_name || "Unknown Provider"}
-                  price={"GH₵${svc.price}"}
-                  to={"/services/${svc.id}"}
+                  price={`GH₵${svc.price}`}
+                  to={`/services/${svc.id}`}
                 />
               ))}
             </ul>
