@@ -8,6 +8,7 @@ import ServicesSearch from "./pages/public/ServicesSearch";
 import ServiceDetails from "./pages/public/ServiceDetails";
 
 import EntrepreneurDashboard from "./pages/dashboard/EntrepreneurDashboard";
+import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import ServiceForm from "./pages/dashboard/ServiceForm";
 import AvailabilityManager from "./pages/dashboard/AvailabilityManager";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
@@ -61,6 +62,16 @@ function App() {
           element={
             <ProtectedRoute allow={["student"]}>
               <StudentDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Admin Dashboard */}
+        <Route 
+          path="/dashboard/admin" 
+          element={
+            <ProtectedRoute allow={["admin"]}>
+              <AdminDashboard />
             </ProtectedRoute>
           } 
         />

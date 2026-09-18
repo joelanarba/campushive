@@ -1,5 +1,8 @@
 const {
   listUsersSchema,
+  listEntrepreneursSchema,
+  entrepreneurIdSchema,
+  updateVerificationSchema,
   serviceIdSchema,
   categoryIdSchema,
   paginationSchema,
@@ -9,6 +12,8 @@ const {
 } = require("../validators/adminValidators");
 const {
   listUsers,
+  listEntrepreneurs,
+  updateEntrepreneurVerification,
   listAdminServices,
   getAdminService,
   listCategories,
@@ -43,6 +48,34 @@ const getUsers = async (req, res, next) => {
       .json({ message: "Users retrieved successfully", data });
   } catch (error) {
     next(error);
+  }
+};
+
+const getEntrepreneurs = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { value, error } = listEntrepreneursSchema.validate(req.query, { abortEarly: false });
+    if (error) return validationFailure(res, error);
+    
+    const data = await listEntrepreneurs(value);
+    return res.status(200).json({ message: "Entrepreneurs retrieved successfully", data });
+  } catch (error) {
+    return serviceFailure(error, res, next);
+  }
+};
+
+const patchEntrepreneur = async (req, res, next) => {
+  try {
+    const params = entrepreneurIdSchema.validate(req.params, { abortEarly: false });
+    if (params.error) return validationFailure(res, params.error);
+    
+    const body = updateVerificationSchema.validate(req.body, { abortEarly: false });
+    if (body.error) return validationFailure(res, body.error);
+    
+    const data = await updateEntrepreneurVerification(params.value.id, body.value);
+    return res.status(200).json({ message: "Entrepreneur verification status updated successfully", data });
+  } catch (error) {
+    return serviceFailure(error, res, next);
   }
 };
 
@@ -165,6 +198,8 @@ const removeCategory = async (req, res, next) => {
 
 module.exports = {
   getUsers,
+  getEntrepreneurs,
+  patchEntrepreneur,
   getServices,
   getService,
   getCategories,

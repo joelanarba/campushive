@@ -4,6 +4,8 @@ const {
 } = require("../middlewares/authMiddleware");
 const {
   getUsers,
+  getEntrepreneurs,
+  patchEntrepreneur,
   getServices,
   getService,
   getCategories,
@@ -17,6 +19,9 @@ const express = require("express");
 
 const router = express.Router();
 router.get("/users", authenticate, authorizeRoles("admin"), getUsers);
+
+router.get("/entrepreneurs", authenticate, authorizeRoles("admin"), getEntrepreneurs);
+router.patch("/entrepreneurs/:id/verify", authenticate, authorizeRoles("admin"), patchEntrepreneur);
 
 router.get("/services", authenticate, authorizeRoles("admin"), getServices);
 router.get(

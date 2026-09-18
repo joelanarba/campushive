@@ -84,6 +84,10 @@ api.getService = (id) => wrap(api.get(`/services/${id}`));
 api.listCategories = () => wrap(api.get("/categories"));
 api.updateEntrepreneurProfile = (updates) => wrap(api.patch("/entrepreneurs/me", updates));
 
+// Admin entrepreneur routes
+api.listEntrepreneurs = (status) => wrap(api.get(status ? `/admin/entrepreneurs?status=${status}` : "/admin/entrepreneurs"));
+api.verifyEntrepreneur = (id, data) => wrap(api.patch(`/admin/entrepreneurs/${id}/verify`, data));
+
 // Entrepreneur specific service management routes
 api.listMyServices = () => wrap(api.get("/entrepreneurs/me/services"));
 api.getMyService = (id) => wrap(api.get(`/entrepreneurs/me/services/${id}`));
