@@ -29,7 +29,7 @@ const register = async (req, res, next) => {
             detail.type === "object.unknown"
               ? "unknown_field"
               : detail.path.join("."),
-          message: "Field is missing, invalid, or not allowed",
+          message: detail.message.replace(/\"/g, ''),
         })),
       });
     }
@@ -61,7 +61,7 @@ const login = async (req, res, next) => {
             detail.type === "object.unknown"
               ? "unknown_field"
               : detail.path.join("."),
-          message: "Field is missing, invalid, or not allowed",
+          message: detail.message.replace(/\"/g, ''),
         })),
       });
     const result = await loginUser(value);

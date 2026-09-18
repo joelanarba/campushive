@@ -32,7 +32,15 @@ export const Login = () => {
     setSubmitting(false);
 
     if (!result.ok) {
-      setErrors({ password: result.error });
+      if (result.data?.errors && Array.isArray(result.data.errors)) {
+        const mappedErrors = {};
+        result.data.errors.forEach(err => {
+          mappedErrors[err.field] = err.message;
+        });
+        setErrors(mappedErrors);
+      } else {
+        setErrors({ email: result.error });
+      }
       return;
     }
 
