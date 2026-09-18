@@ -1,14 +1,29 @@
-import { useState, useEffect } from "react";
+import { usePagedList } from "../../hooks/usePagedList";
+import { Pagination } from "../../components/Pagination";
+import { RequestError } from "../../components/RequestError";
+import { useState } from "react";
 import { Check, X } from "lucide-react";
 import api from "../../services/api";
 import { Modal } from "../../components/Modal";
 import Button from "../../components/Button";
+import { AdminNavigation } from "../../components/AdminNavigation";
 
-function AdminDashboard() {
-  const [entrepreneurs, setEntrepreneurs] = useState([]);
+const AdminDashboard = () => {
+  const [page, setPage] = useState(1);
+  const [actionError, setActionError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("pending");
-  const [loading, setLoading] = useState(true);
-  
+  const list = usePagedList(
+    api.listEntrepreneurs,
+    {
+      page,
+      limit: 20,
+      status: statusFilter === "all" ? undefined : statusFilter,
+    },
+    "entrepreneurs",
+    setPage,
+  );
+  const entrepreneurs = list.items;
+
   // Verification Modal State
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [verificationStatus, setVerificationStatus] = useState("");
@@ -16,20 +31,8 @@ function AdminDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchEntrepreneurs();
-  }, [statusFilter]);
-
-  const fetchEntrepreneurs = async () => {
-    setLoading(true);
-    const res = await api.listEntrepreneurs(statusFilter !== "all" ? statusFilter : null);
-    if (res.ok) {
-      setEntrepreneurs(res.data.data.entrepreneurs);
-    }
-    setLoading(false);
-  };
-
   const openVerifyModal = (profile, status) => {
+    setActionError(null);
     setSelectedProfile(profile);
     setVerificationStatus(status);
     setRejectionReason("");
@@ -38,28 +41,32 @@ function AdminDashboard() {
 
   const handleVerify = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setActionError(null);
     if (verificationStatus === "rejected" && !rejectionReason.trim()) {
-      alert("Please provide a rejection reason.");
+      setActionError("Please provide a rejection reason.");
       return;
     }
 
     setSubmitting(true);
     const res = await api.verifyEntrepreneur(selectedProfile.id, {
       verification_status: verificationStatus,
-      rejection_reason: verificationStatus === "rejected" ? rejectionReason : undefined,
+      rejection_reason:
+        verificationStatus === "rejected" ? rejectionReason : undefined,
     });
 
     if (res.ok) {
       setIsModalOpen(false);
-      fetchEntrepreneurs();
+      list.reload();
     } else {
-      alert(res.error || "Failed to update verification status.");
+      setActionError(res.error || "Failed to update verification status.");
     }
     setSubmitting(false);
   };
 
   return (
     <div className="mx-auto max-w-4xl p-6">
+      <AdminNavigation />
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold text-(--color-ink) dark:text-(--color-paper)">
@@ -69,24 +76,30 @@ function AdminDashboard() {
             Manage entrepreneur verifications.
           </p>
         </div>
-        
+
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded border border-(--color-line) bg-(--color-paper) px-3 py-2 text-sm dark:border-(--color-line-dark) dark:bg-(--color-ink) dark:text-(--color-paper)"
-        >
+          disabled={submitting}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="rounded border border-(--color-line) bg-(--color-paper) px-3 py-2 text-sm dark:border-(--color-line-dark) dark:bg-(--color-ink) dark:text-(--color-paper)">
           <option value="pending">Pending</option>
           <option value="verified">Verified</option>
           <option value="rejected">Rejected</option>
+          <option value="suspended">Suspended</option>
           <option value="all">All</option>
         </select>
       </div>
 
       <div className="rounded-xl border border-(--color-line) bg-(--color-paper) dark:border-(--color-line-dark) dark:bg-(--color-ink)">
-        {loading ? (
+        {list.loading ? (
           <div className="p-8 text-center text-(--color-ink-soft) dark:text-(--color-paper)/60">
             Loading...
           </div>
+        ) : list.error ? (
+          <RequestError error={list.error} onRetry={list.reload} />
         ) : entrepreneurs.length === 0 ? (
           <div className="p-8 text-center text-(--color-ink-soft) dark:text-(--color-paper)/60">
             No entrepreneurs found.
@@ -105,8 +118,12 @@ function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-(--color-line) dark:divide-(--color-line-dark)">
                 {entrepreneurs.map((profile) => (
-                  <tr key={profile.id} className="hover:bg-(--color-paper-raised)/50 dark:hover:bg-(--color-ink-raised)/50">
-                    <td className="px-6 py-4 font-medium">{profile.business_name}</td>
+                  <tr
+                    key={profile.id}
+                    className="hover:bg-(--color-paper-raised)/50 dark:hover:bg-(--color-ink-raised)/50">
+                    <td className="px-6 py-4 font-medium">
+                      {profile.business_name}
+                    </td>
                     <td className="px-6 py-4">
                       {profile.user.full_name}
                       <div className="text-xs text-(--color-ink-soft) dark:text-(--color-paper)/60">
@@ -115,11 +132,14 @@ function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">{profile.location}</td>
                     <td className="px-6 py-4">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        profile.verification_status === 'verified' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                        profile.verification_status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                      }`}>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          profile.verification_status === "verified"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : profile.verification_status === "rejected"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        }`}>
                         {profile.verification_status.toUpperCase()}
                       </span>
                     </td>
@@ -129,26 +149,32 @@ function AdminDashboard() {
                           <button
                             onClick={() => openVerifyModal(profile, "verified")}
                             className="rounded bg-green-100 p-1.5 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
-                            title="Approve"
-                          >
+                            title="Approve">
                             <Check size={16} />
                           </button>
                           <button
                             onClick={() => openVerifyModal(profile, "rejected")}
                             className="rounded bg-red-100 p-1.5 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
-                            title="Reject"
-                          >
+                            title="Reject">
                             <X size={16} />
                           </button>
                         </div>
                       )}
                       {profile.verification_status !== "pending" && (
-                         <button
-                           onClick={() => openVerifyModal(profile, profile.verification_status === "verified" ? "rejected" : "verified")}
-                           className="text-xs font-medium text-(--color-honey-deep) hover:underline"
-                         >
-                           {profile.verification_status === "verified" ? "Revoke" : "Approve"}
-                         </button>
+                        <button
+                          onClick={() =>
+                            openVerifyModal(
+                              profile,
+                              profile.verification_status === "verified"
+                                ? "rejected"
+                                : "verified",
+                            )
+                          }
+                          className="text-xs font-medium text-(--color-honey-deep) hover:underline">
+                          {profile.verification_status === "verified"
+                            ? "Revoke"
+                            : "Approve"}
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -157,17 +183,31 @@ function AdminDashboard() {
             </table>
           </div>
         )}
+        {!list.error && (
+          <Pagination
+            pagination={list.pagination}
+            onPageChange={setPage}
+            disabled={list.loading || submitting}
+          />
+        )}
       </div>
 
       <Modal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={verificationStatus === "verified" ? "Approve Entrepreneur" : "Reject Entrepreneur"}
-      >
+        pending={submitting}
+        onClose={() => {
+          if (!submitting) setIsModalOpen(false);
+        }}
+        title={
+          verificationStatus === "verified"
+            ? "Approve Entrepreneur"
+            : "Reject Entrepreneur"
+        }>
         <form onSubmit={handleVerify} className="space-y-4">
+          <RequestError error={actionError} />
           <p className="text-sm text-(--color-ink-soft) dark:text-(--color-paper)/60">
-            {verificationStatus === "verified" 
-              ? `Are you sure you want to approve ${selectedProfile?.business_name}? Their services will become visible to all students.` 
+            {verificationStatus === "verified"
+              ? `Are you sure you want to approve ${selectedProfile?.business_name}? Their services will become visible to all students.`
               : `You are about to reject ${selectedProfile?.business_name}. Please provide a reason below.`}
           </p>
 
@@ -192,15 +232,10 @@ function AdminDashboard() {
               type="button"
               variant="outline"
               onClick={() => setIsModalOpen(false)}
-              disabled={submitting}
-            >
+              disabled={submitting}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={submitting}
-            >
+            <Button type="submit" variant="primary" disabled={submitting}>
               {submitting ? "Saving..." : "Confirm"}
             </Button>
           </div>
@@ -208,6 +243,6 @@ function AdminDashboard() {
       </Modal>
     </div>
   );
-}
+};
 
 export default AdminDashboard;

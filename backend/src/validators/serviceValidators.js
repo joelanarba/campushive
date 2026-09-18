@@ -29,6 +29,8 @@ const paginationSchema = Joi.object({
     return { ...value, page, limit };
   });
 const publicServiceQuerySchema = paginationSchema.keys({
+  q: Joi.string().trim().min(1).max(200),
+  category_tag: Joi.string().trim().min(1).max(50),
   category_id: Joi.string().guid(),
   entrepreneur_id: Joi.string().guid(),
 });

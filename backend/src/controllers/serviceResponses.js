@@ -11,6 +11,9 @@ const validationFailure = (res, error) =>
   });
 const serviceFailure = (error, res, next) => {
   const errors = {
+    BOOKING_NOT_FOUND: [404, "Booking not found"],
+    BOOKING_FORBIDDEN: [403, "This booking action is not permitted"],
+    BOOKING_CONFLICT: [409, "Booking status changed or this transition is not permitted. Refresh and try again."],
     PROFILE_NOT_FOUND: [404, "Entrepreneur profile not found"],
     MULTIPLE_PROFILES: [
       409,

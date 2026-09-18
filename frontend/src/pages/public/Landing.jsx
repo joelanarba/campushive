@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Sparkles, ArrowRight, Star } from "lucide-react";
 import ServiceCard from "../../components/ServiceCard";
 import heroImage from "../../assets/heroBg.jpg";
+import { RequestError } from "../../components/RequestError";
 import { useApp } from "../../context/AppContext";
 
 const STUDENT_STEPS = [
@@ -84,10 +85,10 @@ const FAQ = [
   },
 ];
 
-export default function Landing() {
+const Landing = () => {
   const [audience, setAudience] = useState("student");
   const steps = audience === "student" ? STUDENT_STEPS : ENTREPRENEUR_STEPS;
-  const { services = [], categories = [] } = useApp();
+  const { services = [], categories = [], servicesLoading, servicesError, loadServicesPreview, categoriesLoading, categoriesError, loadMoreCategories } = useApp();
   
   // Use up to 4 categories for the grid
   const displayCategories = categories.slice(0, 4);
@@ -150,11 +151,14 @@ export default function Landing() {
         <div className="relative z-10 mt-20 border-t border-line-dark/30 bg-ink-raised/50 py-10 backdrop-blur-sm">
           <div className="mx-auto max-w-wrap px-6">
             <h2 className="mb-6 text-2xl font-semibold">Browse by category</h2>
+            {categoriesLoading && <p role="status">Loading categories...</p>}
+            <RequestError error={categoriesError} onRetry={loadMoreCategories} />
+            {!categoriesLoading && !categoriesError && !displayCategories.length && <p>No categories available yet.</p>}
             <ul className="grid list-none grid-cols-2 gap-4 p-0 md:grid-cols-4">
               {displayCategories.map((cat) => (
                 <li key={cat.tag}>
                   <Link
-                    to={`/services?category=${cat.tag}`}
+                    to={`/services?category=${encodeURIComponent(cat.tag)}`}
                     className="block rounded-lg border border-line bg-paper-raised px-4 py-6 text-center font-data font-medium text-ink no-underline hover:border-honey-deep dark:border-line-dark dark:bg-ink-raised dark:text-paper"
                   >
                     {cat.category_name}
@@ -179,6 +183,9 @@ export default function Landing() {
                 See all services
               </Link>
             </div>
+            {servicesLoading && <p role="status" className="mt-6">Loading services...</p>}
+            <RequestError error={servicesError} onRetry={loadServicesPreview} />
+            {!servicesLoading && !servicesError && !popularServices.length && <p className="mt-6">No services available yet.</p>}
             <ul className="mt-6 grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-3">
               {popularServices.map((svc) => (
                 <ServiceCard
@@ -340,5 +347,6 @@ export default function Landing() {
       </section>
     </>
   );
-}
+};
 
+export default Landing;

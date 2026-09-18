@@ -4,10 +4,11 @@ import { Menu, X } from "lucide-react";
 import Button from "./Button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
+import { RequestError } from "./RequestError";
 import { useApp } from "../context/AppContext";
 
-export default function Navbar() {
-  const { currentUser, logout } = useApp();
+const Navbar = () => {
+  const { currentUser, logout, logoutError, loggingOut } = useApp();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -51,7 +52,7 @@ export default function Navbar() {
               <Button to={getDashboardUrl()} variant="ghost">
                 Dashboard
               </Button>
-              <Button onClick={handleLogout} variant="secondary">
+              <Button disabled={loggingOut} onClick={handleLogout} variant="secondary">
                 Log out
               </Button>
             </>
@@ -80,6 +81,7 @@ export default function Navbar() {
         </div>
       </nav>
 
+      <div className="mx-auto max-w-wrap px-6"><RequestError error={logoutError} onRetry={loggingOut ? undefined : handleLogout} /></div>
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="absolute top-full left-0 w-full bg-paper dark:bg-ink border-b border-line dark:border-line-dark shadow-lg md:hidden">
@@ -98,7 +100,7 @@ export default function Navbar() {
                   <Button to={getDashboardUrl()} variant="ghost" className="w-full justify-center" onClick={() => setIsMobileMenuOpen(false)}>
                     Dashboard
                   </Button>
-                  <Button onClick={handleLogout} variant="secondary" className="w-full justify-center">
+                  <Button disabled={loggingOut} onClick={handleLogout} variant="secondary" className="w-full justify-center">
                     Log out
                   </Button>
                 </>
@@ -118,4 +120,6 @@ export default function Navbar() {
       )}
     </header>
   );
-}
+};
+
+export default Navbar;

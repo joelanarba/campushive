@@ -9,7 +9,7 @@ const {
 
 const router = express.Router();
 
-router.post("/", authenticate, create);
+router.post("/", authenticate, authorizeRoles("student"), create);
 router.get("/me", authenticate, getMyBookings);
 router.get("/provider", authenticate, authorizeRoles("entrepreneur"), getProviderBookings);
 router.patch("/:id", authenticate, patchBooking);

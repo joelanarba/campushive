@@ -20,12 +20,12 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 Keep the generated value in `.env`, outside version control. Startup fails when
 the secret is missing. Access tokens default to 900 seconds, configurable with
 `JWT_ACCESS_TTL_SECONDS`. See [login and refresh documentation](authentication.md)
-for cookie sessions and protected access. Email verification and admin approval
-endpoints are not yet provided.
+for cookie sessions and protected access. Email verification is not yet implemented;
+entrepreneur approval remains separate from authentication.
 
 ## POST /api/auth/register
 
-Send `Content-Type: application/json`. Student request:
+Send `Content-Type: application/json`, `credentials: "include"`, and the same origin/CSRF headers as login. Registration sets the HttpOnly refresh cookie and creates its refresh record in the account transaction. Student request:
 
 ```json
 {
@@ -77,7 +77,9 @@ cost 12; neither plaintext nor confirmation is stored.
       "email": "jane@example.com",
       "role": ["student"],
       "is_email_verified": false,
-      "created_at": "2026-09-15T12:00:00.000Z"
+      "created_at": "2026-09-15T12:00:00.000Z",
+      "entrepreneur_profile": null,
+      "entrepreneur_profile_issue": null
     },
     "entrepreneur_profile": null,
     "access_token": "<signed JWT>",
@@ -86,6 +88,8 @@ cost 12; neither plaintext nor confirmation is stored.
   }
 }
 ```
+
+The nested `data.user.entrepreneur_profile` is canonical; the sibling profile is retained for compatibility. Refresh tokens are never returned in JSON.
 
 Entrepreneurs receive `role: ["student", "entrepreneur"]` and a profile object
 containing `id`, `user_id`, the four submitted business fields,
@@ -100,6 +104,7 @@ provider-only operations must check the current database verification status.
 
 - **400**: `{ "message": "Invalid registration input", "errors": [{ "field": "email", "message": "Field is missing, invalid, or not allowed" }] }`
 - **400** for malformed or oversized JSON: `{ "message": "Invalid JSON request body" }`
+- **403**: Authentication request origin is not allowed (same cookie-origin protection as login).
 - **409**: `{ "message": "An account with this email already exists" }`
 - **500**: `{ "message": "An unexpected error occurred" }`
 

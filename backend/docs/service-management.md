@@ -202,3 +202,17 @@ Unexpected failures use the existing shared 500 handler. Expected service/catego
 conflicts are handled in controllers and do not use its email-specific 409 response.
 This issue does not seed categories, change account roles, modify verification statuses,
 run migrations, or implement frontend or booking operations.
+
+## Integrated list navigation
+
+The frontend now consumes page/limit and data.pagination for service lists, category
+options, and admin verification queues. Lists use 20 records per page; categories load
+one additional page only when the user requests it. Landing sections remain bounded
+previews. Service archival refetches the current owner page and preserves inactive records.
+
+Public service queries additionally accept q (trimmed, 1-200 characters) and category_tag
+(trimmed, 1-50 characters). Search matches title or business name case-insensitively;
+category_tag matches a tag exactly, case-insensitively. These filters combine with existing
+category_id and entrepreneur_id filters before counting and paging. Omit blank parameters.
+The public search URL keeps q, category (mapped to category_tag), category_id,
+entrepreneur_id and page. Changing filters resets the page.

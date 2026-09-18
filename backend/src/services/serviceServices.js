@@ -27,6 +27,11 @@ const adminSelect = {
 const publicVisibility = { is_active: true, entrepreneur: { verification_status: "verified" } };
 const serializeService = (service) => ({ ...service, price: service.price.toFixed(2) });
 const serviceFilters = (query) => ({
+  ...(query.q ? { OR: [
+    { title: { contains: query.q, mode: "insensitive" } },
+    { entrepreneur: { business_name: { contains: query.q, mode: "insensitive" } } },
+  ] } : {}),
+  ...(query.category_tag ? { category: { tag: { equals: query.category_tag, mode: "insensitive" } } } : {}),
   ...(query.category_id ? { category_id: query.category_id } : {}),
   ...(query.entrepreneur_id ? { entrepreneur_id: query.entrepreneur_id } : {}),
   ...(query.is_active !== undefined ? { is_active: query.is_active === "true" } : {}),

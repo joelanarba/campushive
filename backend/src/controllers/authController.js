@@ -6,6 +6,8 @@ const {
   registerUser,
   loginUser,
   refreshSession,
+  logoutSession,
+  getCurrentUser: loadCurrentUser,
 } = require("../services/authServices");
 const {
   refreshCookieName,
@@ -31,8 +33,10 @@ const register = async (req, res, next) => {
         })),
       });
     }
-    const data = await registerUser(value);
-    return res.status(201).json({ message: "Registration successful", data });
+    const result = await registerUser(value);
+    setRefreshCookie(res, result.refreshToken);
+    res.set("Cache-Control", "no-store");
+    return res.status(201).json({ message: "Registration successful", data: result.data });
   } catch (error) {
     next(error);
   }
@@ -71,17 +75,20 @@ const login = async (req, res, next) => {
   }
 };
 
+const readRefreshCookie = (req) => {
+  // Reject ambiguous duplicate cookies, just as refresh did before logout was added.
+  const cookies = (req.headers.cookie || "")
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .filter((cookie) => cookie.startsWith(`${refreshCookieName}=`));
+  return cookies.length === 1
+    ? cookies[0].slice(refreshCookieName.length + 1)
+    : undefined;
+};
+
 const refresh = async (req, res, next) => {
   try {
-    // Opaque hex tokens need no decoding. Reject ambiguous duplicate cookies.
-    const cookies = (req.headers.cookie || "")
-      .split(";")
-      .map((cookie) => cookie.trim())
-      .filter((cookie) => cookie.startsWith(`${refreshCookieName}=`));
-    const token =
-      cookies.length === 1
-        ? cookies[0].slice(refreshCookieName.length + 1)
-        : undefined;
+    const token = readRefreshCookie(req);
     const result = await refreshSession(token);
     setRefreshCookie(res, result.refreshToken);
     res.set("Cache-Control", "no-store");
@@ -95,11 +102,25 @@ const refresh = async (req, res, next) => {
   }
 };
 
-const getCurrentUser = (req, res) => {
+const logout = async (req, res, next) => {
   res.set("Cache-Control", "no-store");
-  return res
-    .status(200)
-    .json({ message: "Authenticated user", data: { user: req.user } });
+  try {
+    await logoutSession(readRefreshCookie(req));
+    res.clearCookie(refreshCookieName, refreshCookieOptions);
+    return res.status(204).end();
+  } catch (error) {
+    // Retain the cookie on failure so the caller can retry revocation.
+    next(error);
+  }
 };
 
-module.exports = { register, login, refresh, getCurrentUser };
+const getCurrentUser = async (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const user = await loadCurrentUser(req.user.id);
+    if (!user) return res.status(401).json({ message: "Invalid or missing access token" });
+    return res.status(200).json({ message: "Authenticated user", data: { user } });
+  } catch (error) { next(error); }
+};
+
+module.exports = { register, login, refresh, logout, getCurrentUser };

@@ -1,6 +1,7 @@
 const { prisma } = require("../config/db");
 const { domainError } = require("./serviceServices");
-const { validateBookingAvailability } = require("../services/availabilityServices");
+const { validateBookingAvailability, lockSchedulingRows } = require("./availabilityServices");
+const { resolveOwnProfile } = require("./entrepreneurProfileServices");
 const crypto = require("crypto");
 
 const createBooking = async (userId, payload) => prisma.$transaction(async (tx) => {
@@ -36,55 +37,72 @@ const createBooking = async (userId, payload) => prisma.$transaction(async (tx) 
   return booking;
 }, { isolationLevel: "ReadCommitted" });
 
-const listStudentBookings = async (userId) => {
-  return prisma.booking.findMany({
-    where: { user_id: userId },
-    include: {
-      service: {
-        include: {
-          entrepreneur: {
-            select: { business_name: true, phone_number: true }
-          }
-        }
-      }
-    },
-    orderBy: { starts_at: 'desc' }
-  });
+const listBookings = async (where, include, { page, limit }, provider = false) => {
+  const queries = [
+    prisma.booking.count({ where }),
+    prisma.booking.findMany({ where, include, skip: (page - 1) * limit, take: limit,
+      orderBy: [{ starts_at: "desc" }, { id: "asc" }] }),
+  ];
+  if (provider) queries.push(prisma.booking.count({ where: { AND: [where, { status: { in: ["pending", "confirmed"] }, ends_at: { gt: new Date() } }] } }));
+  const [total, bookings, upcoming] = await prisma.$transaction(queries, { isolationLevel: "RepeatableRead" });
+  return { bookings, pagination: { page, limit, total, total_pages: Math.ceil(total / limit) },
+    ...(provider ? { summary: { upcoming } } : {}) };
 };
 
-const listEntrepreneurBookings = async (userId) => {
-  const profile = await prisma.entrepreneurProfile.findUnique({
-    where: { user_id: userId }
-  });
-  if (!profile) return [];
+const listStudentBookings = (userId, query) => listBookings({ user_id: userId }, {
+  service: { include: { entrepreneur: { select: { business_name: true, phone_number: true } } } },
+}, query);
 
-  return prisma.booking.findMany({
-    where: { service: { entrepreneur_id: profile.id } },
-    include: {
-      user: {
-        select: { full_name: true, email: true }
-      },
-      service: {
-        select: { title: true, price: true }
-      }
-    },
-    orderBy: { starts_at: 'desc' }
-  });
+const listEntrepreneurBookings = async (userId, query) => {
+  const profile = await resolveOwnProfile(userId);
+  return listBookings({ service: { entrepreneur_id: profile.id, entrepreneur: { user_id: userId } } }, {
+    user: { select: { full_name: true, email: true } },
+    service: { select: { title: true, price: true } },
+  }, query, true);
 };
 
-const updateBookingStatus = async (userId, bookingId, status) => {
-  // We'll let both entrepreneur (to confirm/complete) and student (to cancel) use this for now
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { service: { select: { entrepreneur_id: true } } }
-  });
-  if (!booking) throw domainError("BOOKING_NOT_FOUND");
+const updateBookingStatus = async (actor, bookingId, status) =>
+  prisma.$transaction(async (tx) => {
+    const relationships = [];
+    if (actor.role.includes("student")) relationships.push({ user_id: actor.id });
+    if (actor.role.includes("entrepreneur")) {
+      relationships.push({ service: { entrepreneur: { user_id: actor.id } } });
+    }
+    if (!relationships.length) throw domainError("BOOKING_FORBIDDEN");
+    const scope = { id: bookingId, OR: relationships };
+    const include = { service: { select: { entrepreneur_id: true, entrepreneur: { select: { user_id: true } } } } };
+    const initial = await tx.booking.findFirst({ where: scope, include });
+    if (!initial) throw domainError("BOOKING_NOT_FOUND");
 
-  return prisma.booking.update({
-    where: { id: bookingId },
-    data: { status }
-  });
-};
+    // Use the same profile-first protocol as reservation and availability writers.
+    await lockSchedulingRows(tx, initial.service.entrepreneur_id, initial.service_id);
+    await tx.$queryRaw`SELECT id FROM bookings WHERE id = ${bookingId}::uuid FOR UPDATE`;
+    const booking = await tx.booking.findFirst({ where: scope, include });
+    if (!booking) throw domainError("BOOKING_NOT_FOUND");
+    if (booking.status !== initial.status || booking.status === status ||
+        ["cancelled", "completed"].includes(booking.status) || status === "pending") {
+      throw domainError("BOOKING_CONFLICT");
+    }
+
+    const customer = actor.role.includes("student") && booking.user_id === actor.id;
+    const provider = actor.role.includes("entrepreneur") && booking.service.entrepreneur.user_id === actor.id;
+    // Match the rest of provider management: never pick one of duplicate profiles.
+    if (provider && !(customer && status === "cancelled")) {
+      const profile = await resolveOwnProfile(actor.id, tx);
+      if (profile.id !== booking.service.entrepreneur_id) throw domainError("BOOKING_NOT_FOUND");
+    }
+    if (!(customer && status === "cancelled") && !(provider && ["confirmed", "cancelled", "completed"].includes(status))) {
+      throw domainError("BOOKING_FORBIDDEN");
+    }
+    const allowed = (booking.status === "pending" && ["confirmed", "cancelled"].includes(status)) ||
+      (booking.status === "confirmed" && ((customer && status === "cancelled") || (provider && status === "completed")));
+    if (!allowed) throw domainError("BOOKING_CONFLICT");
+    const result = await tx.booking.updateMany({
+      where: { ...scope, status: initial.status, service_id: initial.service_id }, data: { status },
+    });
+    if (result.count !== 1) throw domainError("BOOKING_CONFLICT");
+    return tx.booking.findUnique({ where: { id: bookingId } });
+  }, { isolationLevel: "ReadCommitted" });
 
 module.exports = {
   createBooking,

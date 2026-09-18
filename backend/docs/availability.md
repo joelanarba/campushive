@@ -2,8 +2,8 @@
 
 ## Deployment: migration is prepared, not applied
 
-This change adds weekly scheduling to the existing availability model. It does not add
-a booking HTTP workflow. The implementation did not apply migrations or write database
+The original weekly-availability migration adds weekly scheduling to the existing
+availability model. A booking HTTP workflow has since been integrated (see below). The implementation did not apply migrations or write database
 records. The read-only inventory during planning found zero slots and zero bookings in
 the configured database; other environments may contain legacy records.
 
@@ -180,10 +180,13 @@ statuses are exposed. Date/time conversion uses Luxon with the explicit IANA tim
 never the server's local timezone. PostgreSQL TIME values use UTC-anchored Date objects
 only for storage/serialization, not as appointment instants. Controllers use no-store.
 
-## Booking integration: required future work
+## Booking integration: current implementation
 
-**Booking protection is not complete.** There is still no booking create/reschedule
-endpoint. The new helper is ready for integration but does not reserve anything by itself:
+Booking creation now calls this helper and writes the validated interval in the same
+transaction. Status updates use the same profile/service locking protocol and enforce
+ownership and transitions. Rescheduling remains unimplemented. See
+[integration changes](integration-fixes.md) for current contracts and manual checks.
+The helper itself does not reserve anything:
 
 ```js
 validateBookingAvailability(tx, {
@@ -202,7 +205,7 @@ instant with Z/explicit offset. slotVersion must be the integer returned by disc
 The future controller must validate IDs/input and authenticate/authorize the booking
 operation before calling this service helper. Never accept a client isAvailable value.
 
-Required write pattern (integration example only; not an implemented endpoint):
+Reservation write pattern (now used by POST /api/bookings):
 
 ```js
 const booking = await prisma.$transaction(async (tx) => {
@@ -278,3 +281,12 @@ and concurrency behavior still need manual verification after deployment.
 
 Implementation references: [Luxon API](https://moment.github.io/luxon/api-docs/index.html)
 and [PostgreSQL row locks](https://www.postgresql.org/docs/current/explicit-locking.html).
+
+## Frontend integration
+
+Availability feature methods now use the same { ok, data, error, status } wrapper as
+other frontend features; the underlying HTTP methods still return parsed JSON.
+Success without a response body is represented as data: null. Existing slot responses
+are read from data.data.slots. Loading, empty results, errors with retry, and mutation
+success are separate states. Creation/archive refetch the list; pagination falls back
+to the last valid page after a removal. Existing ownership/conflict checks are unchanged.

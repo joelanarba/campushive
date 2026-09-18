@@ -1,4 +1,6 @@
-# Login and JWT authentication — issue #6
+# Login, logout and JWT authentication — issue #6
+
+> Integration update: registration now creates a refresh session, logout revokes the current family, and all session responses include the safe dashboard user. See [integration changes and manual checks](integration-fixes.md). No new migration is needed for these fixes.
 
 ## Setup and migration
 
@@ -61,9 +63,11 @@ registration complexity rules. Unknown fields are rejected.
       "id": "f0915c73-41c2-4b62-a76b-62f14f893fec",
       "full_name": "Jane Student",
       "email": "jane@example.com",
-      "role": ["student", "entrepreneur"],
+      "role": ["student"],
       "is_email_verified": false,
-      "created_at": "2026-09-15T12:00:00.000Z"
+      "created_at": "2026-09-15T12:00:00.000Z",
+      "entrepreneur_profile": null,
+      "entrepreneur_profile_issue": null
     },
     "access_token": "<JWT>",
     "token_type": "Bearer",
@@ -103,6 +107,20 @@ Two simultaneous uses of one token cannot both succeed: the loser detects reuse
 and revokes the family, including the winner's replacement. Clients must serialize
 refresh calls and log in again after reuse; do not retry an old refresh token.
 
+### POST /api/auth/logout
+
+Send the stored refresh cookie and the same origin/CSRF headers as refresh. An access
+token is not required. The service hashes the token, obtains the same family advisory
+lock used by rotation, and revokes all unrevoked records in the family, including
+replacement tokens and families identified by a consumed/expired cookie.
+
+**204** clears the host-only cookie with matching path, Secure and SameSite options.
+Missing, malformed or unknown cookies also return 204 and clear the cookie. On a
+revocation/database failure, return 500 and retain the cookie for a retry. The UI clears
+local identity immediately but reports a failed server logout and offers retry.
+Other independent login sessions are not revoked. Previously issued access JWTs remain
+valid until expiry; these changes do not introduce an access-token denylist.
+
 ### GET /api/auth/me
 
 Send `Authorization: Bearer <access_token>`.
@@ -110,7 +128,7 @@ Send `Authorization: Bearer <access_token>`.
 ```json
 {
   "message": "Authenticated user",
-  "data": { "user": { "id": "<user UUID>", "role": ["student"] } }
+  "data": { "user": { "id": "<user UUID>", "full_name": "Jane Student", "email": "jane@example.com", "role": ["student"], "is_email_verified": false, "created_at": "2026-09-15T12:00:00.000Z", "entrepreneur_profile": null, "entrepreneur_profile_issue": null } }
 }
 ```
 
@@ -123,14 +141,14 @@ approval do not restrict account authentication; role authorization is issue #7.
 
 ## Cookies, CORS, and CSRF
 
-Use `credentials: "include"` in browser login and refresh requests. For local
+Use `credentials: "include"` in browser registration, login, refresh and logout requests. For local
 same-site use, keep `AUTH_COOKIE_SAME_SITE=lax`. Requests with an Origin header
 must match an explicit `CLIENT_URL` entry; cross-site fetches are rejected in lax
 mode. Requests from nonbrowser clients without Origin are allowed in lax mode.
 
 For a cross-site frontend/API deployment, set `AUTH_COOKIE_SAME_SITE=none` and
 use HTTPS. Secure cookies are forced. Configure exact frontend origins in
-`CLIENT_URL` and send `X-CSRF-Protection: 1` on login and refresh. Both an allowed
+`CLIENT_URL` and send `X-CSRF-Protection: 1` on registration, login, refresh and logout. Both an allowed
 Origin and this custom header are required; CORS preflight prevents unauthorized
 sites from supplying the header. Rejected origins/CSRF checks return **403** with
 `Authentication request origin is not allowed`. Wildcard origins are rejected at
@@ -147,8 +165,9 @@ after refresh-family revocation: middleware checks account existence, not sessio
 revocation. Tokens created by the earlier registration implementation lack issuer,
 audience, and token type and are rejected by the new verifier. Log in to obtain a
 new token. New registration tokens use the same signing configuration as login;
-registration continues returning its existing JSON shape and does not set a refresh
-cookie. Log in to establish a refresh session.
+registration now sets the same refresh cookie as login and creates the account and
+initial refresh record atomically. The existing sibling `data.entrepreneur_profile`
+remains as a compatibility alias; use `data.user.entrepreneur_profile` going forward.
 
 Flow remains `index.js -> authRoutes.js -> authController.js -> authServices.js`.
 Controllers validate Joi schemas and send responses; services use the shared Prisma
@@ -162,3 +181,24 @@ protected access, and login throttling. Existing registration remains public.
 
 Implementation references: [jsonwebtoken verification options](https://github.com/auth0/node-jsonwebtoken)
 and [express-rate-limit configuration](https://express-rate-limit.mintlify.app/reference/configuration).
+
+## Frontend session coordination
+
+Startup restoration and protected-request 401 handling share one refresh promise per
+application instance, including React StrictMode remount effects. A protected request
+retries at most once; a late 401 reuses an already replaced access token. Public calls,
+403 responses and login/register/refresh/logout failures do not trigger refresh.
+A failed refresh clears identity; protected routes return to login.
+
+Login, refresh and user responses carry a local generation guard. Logout increments
+that generation, blocks refresh, clears identity, waits for any cookie-writing login
+or refresh response, and then revokes the current cookie session. No token is placed
+in browser persistent storage. Coordination is within an application instance; separate
+browser tabs can still race refresh rotation and must reauthenticate if reuse protection
+revokes their family. Cross-site cookie support remains subject to browser settings.
+
+The safe user object is shared by registration, login, refresh and /me. A single owned
+profile includes business fields, verification status and rejection reason. Missing
+profiles return null; entrepreneur accounts receive PROFILE_NOT_FOUND or MULTIPLE_PROFILES
+in entrepreneur_profile_issue for missing or duplicate profiles. Student actions remain
+available, while provider operations retain their explicit 404/409 profile checks.

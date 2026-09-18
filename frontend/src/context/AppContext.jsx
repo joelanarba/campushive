@@ -1,125 +1,72 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import api, { setAccessToken } from "../services/api";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import api, { subscribeSession } from "../services/api";
+
+import { useCategoryOptions } from "../hooks/useCategoryOptions";
 
 const AppContext = createContext(null);
-
-export function AppProvider({ children }) {
+export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [bootstrapping, setBootstrapping] = useState(true);
+  const [logoutError, setLogoutError] = useState(null);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [services, setServices] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [servicesError, setServicesError] = useState(null);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const categoryOptions = useCategoryOptions();
+  const previewSequence = useRef(0);
 
-  // On mount: try to restore the session from the refresh cookie.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const refreshed = await api.refresh();
-      if (!cancelled && refreshed.ok) {
-        setAccessToken(refreshed.data.data.access_token);
-        const me = await api.me();
-        if (!cancelled && me.ok) setCurrentUser(me.data.data.user);
-      }
-      if (!cancelled) setBootstrapping(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
+    let active = true;
+    const unsubscribe = subscribeSession(setCurrentUser);
+    api.restore().finally(() => { if (active) setBootstrapping(false); });
+    return () => { active = false; unsubscribe(); };
   }, []);
 
-  // Public catalogue — fetch once.
-  useEffect(() => {
-    (async () => {
-      const [s, c] = await Promise.all([
-        api.listServices(),
-        api.listCategories(),
-      ]);
-      if (s.ok) setServices(s.data.data.services);
-      if (c.ok) setCategories(c.data.data.categories);
-    })();
+  const loadServicesPreview = useCallback(async () => {
+    const ticket = ++previewSequence.current;
+    setServicesLoading(true);
+    setServicesError(null);
+    const res = await api.listServices({ page: 1, limit: 20 });
+    if (ticket !== previewSequence.current) return;
+    if (res.ok) setServices(res.data.data.services);
+    else setServicesError(res.error);
+    setServicesLoading(false);
   }, []);
 
-  async function login(email, password) {
+  useEffect(() => { loadServicesPreview(); }, [loadServicesPreview]);
+  const login = async (email, password) => {
+    setLogoutError(null);
     const res = await api.login({ email, password });
-    if (!res.ok) return { ok: false, error: res.error };
-
-    setAccessToken(res.data.data.access_token);
-    const me = await api.me();
-    const user = me.ok ? me.data.data.user : null;
-    setCurrentUser(user);
-    return { ok: true, user };
-  }
-
-  async function register(form) {
-    const payload = {
-      account_type: form.role, // role → account_type
-      full_name: form.fullName, // fullName → full_name
-      email: form.email,
-      password: form.password,
-      confirm_password: form.confirmPassword,
-    };
-
-    if (form.role === "entrepreneur") {
-      payload.business_name = form.businessName;
-      payload.description = form.description;
-      payload.phone_number = form.phoneNumber;
-      payload.location = form.location;
-    }
-
+    return res.ok ? { ok: true, user: res.data.data.user } : res;
+  };
+  const register = async (form) => {
+    setLogoutError(null);
+    const payload = { account_type: form.role, full_name: form.fullName, email: form.email,
+      password: form.password, confirm_password: form.confirmPassword };
+    if (form.role === "entrepreneur") Object.assign(payload, { business_name: form.businessName,
+      description: form.description, phone_number: form.phoneNumber, location: form.location });
     const res = await api.register(payload);
-    if (!res.ok) return { ok: false, error: res.error };
-
-    // If the backend returns a token on register, use it; otherwise log in.
-    if (res.data.data?.access_token) {
-      setAccessToken(res.data.data.access_token);
-    } else {
-      const loginRes = await api.login({
-        email: form.email,
-        password: form.password,
-      });
-      if (loginRes.ok) setAccessToken(loginRes.data.data.access_token);
-    }
-
-    const me = await api.me();
-    const user = me.ok ? me.data.data.user : null;
-    setCurrentUser(user);
-    return { ok: true, user };
-  }
-
-  async function logout() {
-    setAccessToken(null);
-    setCurrentUser(null);
-    // No /logout endpoint listed — the refresh cookie stays valid until it
-    // expires, or the backend adds a logout route. Fine for now.
-  }
-
-  async function updateMyProfile(updates) {
-    const res = await api.updateEntrepreneurProfile(updates);
-    if (res.ok) {
-      const me = await api.me();
-      if (me.ok) setCurrentUser(me.data.data.user);
-    }
+    return res.ok ? { ok: true, user: res.data.data.user } : res;
+  };
+  const logout = async () => {
+    setLoggingOut(true);
+    setLogoutError(null);
+    const res = await api.logout();
+    if (!res.ok) setLogoutError("Signed out locally, but the server session could not be revoked. " + res.error);
+    setLoggingOut(false);
     return res;
-  }
+  };
+  const updateMyProfile = async (updates) => {
+    const res = await api.updateEntrepreneurProfile(updates);
+    if (res.ok) return api.me();
+    return res;
+  };
 
-  const value = useMemo(
-    () => ({
-      currentUser,
-      bootstrapping,
-      login,
-      register,
-      logout,
-      updateMyProfile,
-      services,
-      categories,
-    }),
-    [currentUser, bootstrapping, services, categories],
-  );
-
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
-
-export function useApp() {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error("useApp must be used within AppProvider");
-  return ctx;
-}
+  return <AppContext.Provider value={{ currentUser, bootstrapping, login, register, logout, logoutError, loggingOut,
+    updateMyProfile, services, servicesLoading, servicesError, loadServicesPreview, ...categoryOptions }}>{children}</AppContext.Provider>;
+};
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) throw new Error("useApp must be used within AppProvider");
+  return context;
+};

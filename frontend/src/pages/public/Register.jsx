@@ -7,7 +7,7 @@ import { FormField } from "../../components/FormField";
 import { PasswordField } from "../../components/PasswordField";
 import Button from "../../components/Button";
 
-export function Register() {
+export const Register = () => {
   const { register } = useApp();
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -25,11 +25,11 @@ export function Register() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  function update(field, value) {
+  const update = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-  }
+  };
 
-  function validate() {
+  const validate = () => {
     const next = {};
     if (!form.fullName.trim()) next.fullName = "Enter your full name.";
     if (!/^\S+@\S+\.\S+$/.test(form.email))
@@ -47,10 +47,11 @@ export function Register() {
       if (!form.location.trim()) next.location = "Where are you based?";
     }
     return next;
-  }
+  };
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     const nextErrors = validate();
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -66,7 +67,7 @@ export function Register() {
       return;
     }
     navigate(form.role === "entrepreneur" ? "/dashboard/entrepreneur" : "/services");
-  }
+  };
 
   const points =
     form.role === "entrepreneur"
@@ -223,4 +224,4 @@ export function Register() {
       </div>
     </div>
   );
-}
+};

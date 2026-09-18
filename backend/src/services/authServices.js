@@ -14,6 +14,7 @@ const userSelect = {
   is_email_verified: true,
   created_at: true,
   entrepreneur_profiles: {
+    take: 2,
     select: {
       id: true,
       user_id: true,
@@ -27,6 +28,29 @@ const userSelect = {
     },
   },
 };
+// One safe shape for all session responses; never select an arbitrary profile.
+const serializeUser = (record) => {
+  const profiles = record.entrepreneur_profiles || [];
+  return {
+    id: record.id, full_name: record.full_name, email: record.email, role: record.role,
+    is_email_verified: record.is_email_verified, created_at: record.created_at,
+    entrepreneur_profile: profiles.length === 1 ? profiles[0] : null,
+    entrepreneur_profile_issue: record.role.includes("entrepreneur")
+      ? profiles.length === 0 ? "PROFILE_NOT_FOUND" : profiles.length > 1 ? "MULTIPLE_PROFILES" : null
+      : null,
+  };
+};
+
+const createSession = async (db, user, familyId = randomUUID()) => {
+  const refresh = createRefreshToken();
+  const data = { user, ...issueAccessToken(user) };
+  await db.refreshToken.create({ data: {
+    user_id: user.id, token_hash: refresh.token_hash,
+    expires_at: refresh.expires_at, family_id: familyId,
+  } });
+  return { data, refreshToken: refresh.token };
+};
+
 const duplicateEmail = () => {
   const error = new Error("An account with this email already exists");
   error.status = 409;
@@ -76,12 +100,10 @@ const registerUser = async (input) => {
         },
         select: userSelect,
       });
-      const { entrepreneur_profiles, ...user } = record;
-      return {
-        user,
-        entrepreneur_profile: entrepreneur_profiles[0] || null,
-        ...issueAccessToken(user),
-      };
+      const user = serializeUser(record);
+      const session = await createSession(tx, user);
+      session.data.entrepreneur_profile = user.entrepreneur_profile;
+      return session;
     });
   } catch (error) {
     if (error.code === "P2002") throw duplicateEmail();
@@ -91,15 +113,6 @@ const registerUser = async (input) => {
 
 // Use the same bcrypt cost for unknown emails to avoid an obvious timing shortcut.
 const dummyPasswordHash = bcrypt.hash(randomBytes(32).toString("hex"), 12);
-const safeUserSelect = {
-  id: true,
-  full_name: true,
-  email: true,
-  role: true,
-  is_email_verified: true,
-  created_at: true,
-};
-
 const authenticationError = (code) => {
   const error = new Error("Authentication failed");
   error.status = 401;
@@ -119,25 +132,14 @@ const loginUser = async ({ email, password }) => {
   const dummyHash = await dummyPasswordHash;
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { ...safeUserSelect, password_hash: true },
+    select: { ...userSelect, password_hash: true },
   });
   const matches = await bcrypt.compare(
     password,
     user?.password_hash || dummyHash,
   );
   if (!user || !matches) throw authenticationError("INVALID_CREDENTIALS");
-  const { password_hash, ...safeUser } = user;
-  const refresh = createRefreshToken();
-  const data = { user: safeUser, ...issueAccessToken(safeUser) };
-  await prisma.refreshToken.create({
-    data: {
-      user_id: user.id,
-      token_hash: refresh.token_hash,
-      expires_at: refresh.expires_at,
-      family_id: randomUUID(),
-    },
-  });
-  return { data, refreshToken: refresh.token };
+  return prisma.$transaction((tx) => createSession(tx, serializeUser(user)));
 };
 
 const refreshSession = async (token) => {
@@ -157,7 +159,7 @@ const refreshSession = async (token) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${initial.family_id}))::text`;
       const record = await tx.refreshToken.findUnique({
         where: { token_hash },
-        include: { user: { select: safeUserSelect } },
+        include: { user: { select: userSelect } },
       });
       if (!record) return null;
       const now = new Date();
@@ -181,19 +183,7 @@ const refreshSession = async (token) => {
         data: { consumed_at: now },
       });
       if (consumed.count !== 1) return null;
-      const refresh = createRefreshToken();
-      await tx.refreshToken.create({
-        data: {
-          user_id: record.user_id,
-          token_hash: refresh.token_hash,
-          family_id: record.family_id,
-          expires_at: refresh.expires_at,
-        },
-      });
-      return {
-        data: { user: record.user, ...issueAccessToken(record.user) },
-        refreshToken: refresh.token,
-      };
+      return createSession(tx, serializeUser(record.user), record.family_id);
     },
     { isolationLevel: "ReadCommitted" },
   );
@@ -201,7 +191,25 @@ const refreshSession = async (token) => {
   return result;
 };
 
+const logoutSession = async (token) => {
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return;
+  const record = await prisma.refreshToken.findUnique({ where: { token_hash: hashRefreshToken(token) }, select: { family_id: true } });
+  if (!record) return;
+  await prisma.$transaction(async (tx) => {
+    // Revokes replacements too, whether logout or rotation obtains the lock first.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${record.family_id}))::text`;
+    await tx.refreshToken.updateMany({ where: { family_id: record.family_id, revoked_at: null }, data: { revoked_at: new Date() } });
+  }, { isolationLevel: "ReadCommitted" });
+};
+
+const getCurrentUser = async (id) => {
+  const record = await prisma.user.findUnique({ where: { id }, select: userSelect });
+  return record ? serializeUser(record) : null;
+};
+
 module.exports = {
+  logoutSession,
+  getCurrentUser,
   registerUser,
   loginUser,
   refreshSession,

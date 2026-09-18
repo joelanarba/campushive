@@ -3,6 +3,7 @@ const {
   register,
   login,
   refresh,
+  logout,
   getCurrentUser,
 } = require("../controllers/authController");
 const {
@@ -13,9 +14,10 @@ const {
 
 const router = express.Router();
 
-router.post("/register", register);
+router.post("/register", protectAuthCookies, register);
 router.post("/login", limitLogin, protectAuthCookies, login);
 router.post("/refresh", protectAuthCookies, refresh);
+router.post("/logout", protectAuthCookies, logout);
 router.get("/me", authenticate, getCurrentUser);
 
 module.exports = router;

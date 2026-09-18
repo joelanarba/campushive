@@ -7,7 +7,7 @@ import { ErrorSummary } from "../../components/ErrorSummary";
 import { AuthSplitPanel } from "../../components/AuthSplitPanel";
 import Button from "../../components/Button";
 
-export function Login() {
+export const Login = () => {
   const { login } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,8 +16,9 @@ export function Login() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     const nextErrors = {};
     if (!email.trim()) nextErrors.email = "Enter your email address.";
     if (!password) nextErrors.password = "Enter your password.";
@@ -41,7 +42,7 @@ export function Login() {
     else if (result.user?.role?.includes("entrepreneur"))
       navigate("/dashboard/entrepreneur");
     else navigate("/services");
-  }
+  };
 
   return (
     <div className="grid lg:grid-cols-2 lg:min-h-screen">
@@ -84,8 +85,8 @@ export function Login() {
             autoComplete="current-password"
           />
 
-          <Button type="submit" variant="primary" className="w-full">
-            Log in
+          <Button disabled={submitting} type="submit" variant="primary" className="w-full">
+            {submitting ? "Logging in..." : "Log in"}
           </Button>
         </form>
 
@@ -101,4 +102,4 @@ export function Login() {
       </div>
     </div>
   );
-}
+};

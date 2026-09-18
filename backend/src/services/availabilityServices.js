@@ -170,12 +170,19 @@ const getPublicAvailability = (serviceId, { date_from, date_to }) => prisma.$tra
 const validateBookingAvailability = async (tx, {
   serviceId, slotId, slotVersion, startsAt, entrepreneurId, excludeBookingId,
 }) => {
-  if (!tx || typeof tx.$queryRaw !== "function" || typeof tx.$transaction === "function") {
-    throw new Error("validateBookingAvailability requires a Prisma transaction client");
+  // Prisma 7.10 transaction clients expose $transaction for nested transactions.
+  // Connection lifecycle methods remain unavailable inside an interactive transaction.
+  if (!tx || typeof tx.$queryRaw !== "function" ||
+      typeof tx.$connect === "function" || typeof tx.$disconnect === "function") {
+    throw Object.assign(new Error("validateBookingAvailability requires a Prisma transaction client"), {
+      code: "BOOKING_TRANSACTION_REQUIRED",
+    });
   }
   const [settings] = await tx.$queryRaw`SELECT current_setting('transaction_isolation') AS isolation`;
   if (settings.isolation !== "read committed") {
-    throw new Error("Booking availability requires ReadCommitted isolation");
+    throw Object.assign(new Error("Booking availability requires ReadCommitted isolation"), {
+      code: "BOOKING_ISOLATION_REQUIRED",
+    });
   }
   const initial = await tx.service.findUnique({ where: { id: serviceId }, select: { entrepreneur_id: true } });
   if (!initial) throw domainError("SERVICE_NOT_FOUND");
@@ -213,5 +220,5 @@ const validateBookingAvailability = async (tx, {
   return { service_id: serviceId, slot_id: slotId, starts_at: normalizedStart, ends_at: normalizedEnd };
 };
 
-module.exports = { createAvailability, listAvailability, patchAvailability, archiveAvailability,
+module.exports = { lockSchedulingRows, createAvailability, listAvailability, patchAvailability, archiveAvailability,
   getPublicAvailability, validateBookingAvailability };
