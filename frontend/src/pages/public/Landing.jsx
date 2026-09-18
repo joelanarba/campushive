@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Star } from "lucide-react";
 import ServiceCard from "../../components/ServiceCard";
 import heroImage from "../../assets/heroBg.jpg";
 import { useApp } from "../../context/AppContext";
@@ -43,6 +43,24 @@ const ENTREPRENEUR_STEPS = [
   },
 ];
 
+const TESTIMONIALS = [
+  {
+    quote: "I needed a last-minute haircut before my presentation. Found a barber on campus and booked it instantly. Lifesaver!",
+    author: "David O.",
+    role: "Computer Science Major",
+  },
+  {
+    quote: "CampusHive completely changed how I run my photography hustle. The scheduling handles itself, and I just show up to shoot.",
+    author: "Sarah K.",
+    role: "Campus Photographer",
+  },
+  {
+    quote: "No more waiting hours for replies on WhatsApp just to find out they are fully booked. Everything is right there.",
+    author: "Michael T.",
+    role: "Business Admin Major",
+  }
+];
+
 const FAQ = [
   {
     q: "How do I know the providers are real students?",
@@ -75,6 +93,15 @@ export default function Landing() {
   const displayCategories = categories.slice(0, 4);
   // Use up to 3 services for popular section
   const popularServices = services.slice(0, 3);
+  
+  // Extract up to 3 unique verified providers from services
+  const uniqueProviders = new Map();
+  services.forEach(svc => {
+    if (svc.entrepreneur && !uniqueProviders.has(svc.entrepreneur.id)) {
+      uniqueProviders.set(svc.entrepreneur.id, svc.entrepreneur);
+    }
+  });
+  const featuredProviders = Array.from(uniqueProviders.values()).slice(0, 3);
 
   return (
     <>
@@ -166,6 +193,38 @@ export default function Landing() {
             </ul>
           </div>
         </section>
+
+        {/* Featured Providers */}
+        {featuredProviders.length > 0 && (
+          <section className="pb-14 mt-10">
+            <div className="mx-auto max-w-wrap px-6">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-2xl font-semibold">Featured Providers</h2>
+              </div>
+              <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+                {featuredProviders.map((provider) => (
+                  <div key={provider.id} className="rounded-xl border border-line bg-paper p-6 text-center shadow-sm dark:border-line-dark dark:bg-ink-raised">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-honey-tint font-display text-2xl font-bold text-ink dark:bg-honey-deep/20 dark:text-honey-deep">
+                      {provider.business_name.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold text-ink dark:text-paper">
+                      {provider.business_name}
+                    </h3>
+                    <p className="mt-1 text-sm text-ink-soft dark:text-paper/70">
+                      📍 {provider.location}
+                    </p>
+                    <Link
+                      to={`/services?entrepreneur_id=${provider.id}`}
+                      className="mt-6 inline-block w-full rounded-md border border-line px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-paper-raised dark:border-line-dark dark:text-paper dark:hover:bg-ink"
+                    >
+                      View Profile
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* How CampusHive works */}
@@ -212,6 +271,29 @@ export default function Landing() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 text-center bg-paper dark:bg-ink border-t border-line dark:border-line-dark">
+        <div className="mx-auto max-w-wrap px-6">
+          <h2 className="text-2xl font-semibold">What students are saying</h2>
+          <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-3">
+            {TESTIMONIALS.map((t, idx) => (
+              <div key={idx} className="relative rounded-2xl bg-paper-raised p-8 text-left shadow-sm dark:bg-ink-raised border border-transparent dark:border-line-dark">
+                <div className="mb-4 flex text-honey">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} size={16} fill="currentColor" />
+                  ))}
+                </div>
+                <p className="text-ink dark:text-paper/90 mb-6 italic">"{t.quote}"</p>
+                <div>
+                  <p className="font-semibold text-ink dark:text-paper">{t.author}</p>
+                  <p className="text-sm text-ink-soft dark:text-paper/60">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
