@@ -1,4 +1,4 @@
-const { prisma } = require('../backend/src/config/db');
+const { prisma } = require('../src/config/db');
 
 async function main() {
   // Ensure ent@gmail.com exists
