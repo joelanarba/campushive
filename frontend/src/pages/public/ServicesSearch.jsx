@@ -114,7 +114,11 @@ const ServicesSearch = () => {
           type="search"
           value={query}
           maxLength={200}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value;
+            setQuery(value);
+            if (!value.trim() && q) changeFilter("q", "");
+          }}
           placeholder="Search services or providers"
           className="w-full rounded-md border border-line bg-white px-4 py-[0.65rem] font-data text-[0.95rem] text-ink dark:border-line-dark dark:bg-ink-raised dark:text-paper"
         />
