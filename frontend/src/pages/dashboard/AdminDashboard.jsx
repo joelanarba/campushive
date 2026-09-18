@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
 import api from "../../services/api";
-import Modal from "../../components/Modal";
+import { Modal } from "../../components/Modal";
 import Button from "../../components/Button";
 
 function AdminDashboard() {
@@ -160,7 +160,7 @@ function AdminDashboard() {
       </div>
 
       <Modal
-        isOpen={isModalOpen}
+        open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={verificationStatus === "verified" ? "Approve Entrepreneur" : "Reject Entrepreneur"}
       >
