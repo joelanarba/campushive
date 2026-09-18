@@ -39,7 +39,7 @@ async function main() {
           description: 'Book this service to test the flow!',
           price: 50.00,
           duration_minutes: 60,
-          location: 'Online'
+          location_type: 'online'
         }
       });
     }
