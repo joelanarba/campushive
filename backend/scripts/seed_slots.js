@@ -1,4 +1,4 @@
-const { prisma } = require('../src/config/db');
+const { prisma } = require('../backend/src/config/db');
 
 async function main() {
   // Ensure ent@gmail.com exists
@@ -9,7 +9,6 @@ async function main() {
 
   if (!entUser) {
     console.log("Creating ent@gmail.com");
-    // Just mock it if it doesn't exist. Usually it exists.
   } else {
     console.log("Found ent@gmail.com");
     let profile = entUser.entrepreneur_profiles[0];
@@ -52,11 +51,23 @@ async function main() {
   // We want to add slots for tomorrow and the next day
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(9, 0, 0, 0);
+  tomorrow.setHours(0, 0, 0, 0);
+
+  const tomorrowStart = new Date(tomorrow);
+  tomorrowStart.setHours(9, 0, 0, 0); // 9:00 AM
+
+  const tomorrowEnd = new Date(tomorrow);
+  tomorrowEnd.setHours(10, 0, 0, 0); // 10:00 AM
 
   const nextDay = new Date();
   nextDay.setDate(nextDay.getDate() + 2);
-  nextDay.setHours(10, 0, 0, 0);
+  nextDay.setHours(0, 0, 0, 0);
+
+  const nextDayStart = new Date(nextDay);
+  nextDayStart.setHours(10, 0, 0, 0); // 10:00 AM
+
+  const nextDayEnd = new Date(nextDay);
+  nextDayEnd.setHours(11, 0, 0, 0); // 11:00 AM
 
   let slotsCreated = 0;
   for (const service of services) {
@@ -64,7 +75,7 @@ async function main() {
     await prisma.availabilitySlot.deleteMany({
       where: {
         service_id: service.id,
-        starts_at: { gt: new Date() }
+        slot_date: { gt: new Date() }
       }
     });
 
@@ -72,9 +83,10 @@ async function main() {
     await prisma.availabilitySlot.create({
       data: {
         service_id: service.id,
-        starts_at: tomorrow,
-        ends_at: new Date(tomorrow.getTime() + service.duration_minutes * 60000),
-        capacity: 1
+        slot_date: tomorrow,
+        start_time: tomorrowStart,
+        end_time: tomorrowEnd,
+        is_active: true
       }
     });
 
@@ -82,9 +94,10 @@ async function main() {
     await prisma.availabilitySlot.create({
       data: {
         service_id: service.id,
-        starts_at: nextDay,
-        ends_at: new Date(nextDay.getTime() + service.duration_minutes * 60000),
-        capacity: 1
+        slot_date: nextDay,
+        start_time: nextDayStart,
+        end_time: nextDayEnd,
+        is_active: true
       }
     });
     slotsCreated += 2;
