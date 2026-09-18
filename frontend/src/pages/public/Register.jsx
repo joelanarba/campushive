@@ -62,10 +62,26 @@ export const Register = () => {
     const result = await register(form); // ← async now
     setSubmitting(false);
 
-    if (!result.ok) {
-      setErrors({ email: result.error });
-      return;
-    }
+      if (!result.ok) {
+        if (result.data?.errors && Array.isArray(result.data.errors)) {
+          const map = {
+            full_name: "fullName",
+            account_type: "role",
+            confirm_password: "confirmPassword",
+            business_name: "businessName",
+            phone_number: "phoneNumber"
+          };
+          const mappedErrors = {};
+          result.data.errors.forEach(err => {
+            const field = map[err.field] || err.field;
+            mappedErrors[field] = err.message;
+          });
+          setErrors(mappedErrors);
+        } else {
+          setErrors({ email: result.error });
+        }
+        return;
+      }
     navigate(form.role === "entrepreneur" ? "/dashboard/entrepreneur" : "/services");
   };
 

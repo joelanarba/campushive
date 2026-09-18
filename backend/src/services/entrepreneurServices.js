@@ -33,7 +33,7 @@ const updateOwnProfile = async (userId, input) => {
 
   try {
     return await prisma.entrepreneurProfile.update({
-      where: { id: profile.id, user_id: userId },
+      where: { id: profile.id },
       data,
       select: {
         id: true,

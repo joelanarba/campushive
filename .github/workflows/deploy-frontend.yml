@@ -38,3 +38,6 @@ jobs:
       - name: Deploy to S3
         working-directory: ./frontend
         run: aws s3 sync dist/ s3://campushive-frontend-694069618970-us-east-1 --delete
+
+      - name: Invalidate CloudFront Cache
+        run: aws cloudfront create-invalidation --distribution-id E36CFE1XX3RT21 --paths "/*"

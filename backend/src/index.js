@@ -29,6 +29,9 @@ const { clientOrigins } = require("./config/authConfig");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust the first proxy in AWS (ELB/CloudFront)
+app.set("trust proxy", 1);
+
 // Core Middlewares
 app.use(
   cors({
